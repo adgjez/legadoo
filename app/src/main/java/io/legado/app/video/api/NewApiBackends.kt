@@ -46,7 +46,7 @@ class NewApiImageBackend(
     override suspend fun testConnection() = withContext(Dispatchers.IO) {
         try {
             val response = client.newCall(
-                Request.Builder().url("$baseUrl/models").headers(headers()).get().build()
+                Request.Builder().url("${baseUrl()}/models").headers(headers()).get().build()
             ).execute()
             Result.success(ConnectionTestResult(
                 success = response.isSuccessful,
@@ -69,7 +69,7 @@ class NewApiImageBackend(
             "n" to request.count,
             "response_format" to "url"
         )
-        return execute("$baseUrl/v1/images/generations", body) { body ->
+        return execute("${baseUrl()}/v1/images/generations", body) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             val images = (parsed["data"] as? List<*>)?.mapNotNull { item ->
                 (item as? Map<*, *>)?.let { GeneratedImage(url = it["url"] as? String) }
@@ -85,7 +85,7 @@ class NewApiImageBackend(
             "prompt" to request.prompt,
             "image" to request.imageUrl
         )
-        return execute("$baseUrl/v1/images/edits", body) { body ->
+        return execute("${baseUrl()}/v1/images/edits", body) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             val images = (parsed["data"] as? List<*>)?.mapNotNull { item ->
                 (item as? Map<*, *>)?.let { GeneratedImage(url = it["url"] as? String) }
@@ -149,7 +149,7 @@ class NewApiVideoBackend(
     override suspend fun testConnection() = withContext(Dispatchers.IO) {
         try {
             val response = client.newCall(
-                Request.Builder().url("$baseUrl/models").headers(headers()).get().build()
+                Request.Builder().url("${baseUrl()}/models").headers(headers()).get().build()
             ).execute()
             Result.success(ConnectionTestResult(
                 success = response.isSuccessful,
@@ -170,7 +170,7 @@ class NewApiVideoBackend(
             put("duration", request.duration)
             request.imageUrl?.let { put("image", it) }
         }
-        return execute("$baseUrl/v1/videos/generations", body) { body ->
+        return execute("${baseUrl()}/v1/videos/generations", body) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             VideoGenerationResult(
                 taskId = parsed["id"] as? String,
@@ -181,7 +181,7 @@ class NewApiVideoBackend(
     }
 
     override suspend fun getStatus(taskId: String): Result<VideoTaskStatus> {
-        return execute("$baseUrl/v1/videos/$taskId", emptyMap()) { body ->
+        return execute("${baseUrl()}/v1/videos/$taskId", emptyMap()) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             VideoTaskStatus(
                 taskId = taskId,
@@ -196,7 +196,7 @@ class NewApiVideoBackend(
         return try {
             val response = client.newCall(
                 Request.Builder()
-                    .url("$baseUrl/v1/videos/$taskId/cancel")
+                    .url("${baseUrl()}/v1/videos/$taskId/cancel")
                     .headers(headers())
                     .post("{}".toRequestBody("application/json".toMediaType()))
                     .build()
@@ -265,7 +265,7 @@ class NewApiTextBackend(
     override suspend fun testConnection() = withContext(Dispatchers.IO) {
         try {
             val response = client.newCall(
-                Request.Builder().url("$baseUrl/models").headers(headers()).get().build()
+                Request.Builder().url("${baseUrl()}/models").headers(headers()).get().build()
             ).execute()
             Result.success(ConnectionTestResult(
                 success = response.isSuccessful,
@@ -287,7 +287,7 @@ class NewApiTextBackend(
             put("max_tokens", request.maxTokens)
             request.systemPrompt?.let { put("system_prompt", it) }
         }
-        return execute("$baseUrl/v1/chat/completions", body) { body ->
+        return execute("${baseUrl()}/v1/chat/completions", body) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             val content = (parsed["choices"] as? List<*>)?.firstOrNull()?.let { choice ->
                 (choice as? Map<*, *>)?.get("message")?.let { msg ->

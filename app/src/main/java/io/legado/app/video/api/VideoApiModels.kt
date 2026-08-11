@@ -21,6 +21,7 @@ data class ImageResponse(
 data class GeneratedImage(
     val url: String? = null,
     val base64: String? = null,
+    val localPath: String? = null,
     val width: Int = 0,
     val height: Int = 0
 )
@@ -47,10 +48,10 @@ data class VideoStatusResponse(
 )
 
 data class ConnectionTestResult(
-    val success: Boolean,
-    val message: String,
-    val latencyMs: Long = 0,
-    val httpCode: Int = 0
+    var success: Boolean = false,
+    var message: String = "",
+    var latencyMs: Long = 0,
+    var httpCode: Int = 0
 )
 
 data class ApiError(
@@ -62,7 +63,9 @@ data class ApiError(
 data class TokenUsage(
     val promptTokens: Int = 0,
     val completionTokens: Int = 0,
-    val totalTokens: Int = 0
+    val totalTokens: Int = 0,
+    val inputTokens: Int = 0,
+    val outputTokens: Int = 0
 )
 
 data class VideoApiConfig(

@@ -31,7 +31,7 @@ class RunwayApiClient : VideoApiClient {
     private fun apiKey(): String = config.apiKey
 
     private fun buildHeaders(): Headers = Headers.Builder()
-        .add("Authorization", "Bearer $apiKey")
+        .add("Authorization", "Bearer ${apiKey()}")
         .add("Content-Type", "application/json")
         .add("X-Runway-Version", "2024-11-06")
         .build()
@@ -39,7 +39,7 @@ class RunwayApiClient : VideoApiClient {
     override suspend fun testConnection(): Result<ConnectionTestResult> = withContext(Dispatchers.IO) {
         val result = ConnectionTestResult()
         val request = Request.Builder()
-            .url("$baseUrl/organization")
+            .url("${baseUrl()}/organization")
             .headers(buildHeaders())
             .get()
             .build()
@@ -79,7 +79,7 @@ class RunwayApiClient : VideoApiClient {
         style: String?
     ): Result<ImageResponse> {
         val modelName = model ?: config.imageModel ?: "gen3_image"
-        val url = "$baseUrl/image/v1/text_to_image"
+        val url = "${baseUrl()}/image/v1/text_to_image"
         val requestBody = mapOf(
             "model" to modelName,
             "promptText" to prompt,
@@ -102,11 +102,10 @@ class RunwayApiClient : VideoApiClient {
         aspectRatio: String
     ): Result<VideoResponse> {
         val modelName = model ?: config.videoModel ?: "gen3_turbo"
-        val url = "$baseUrl/image/to_video"
-        
+        val url = "${baseUrl()}/image/to_video"
+
         val requestBody = if (imageUrl != null) {
             mapOf(
-                "model" to modelName,
                 "promptText" to prompt,
                 "imageUrl" to imageUrl,
                 "ratio" to aspectRatio,
@@ -114,7 +113,6 @@ class RunwayApiClient : VideoApiClient {
             )
         } else {
             mapOf(
-                "model" to modelName,
                 "promptText" to prompt,
                 "ratio" to aspectRatio,
                 "duration" to duration
@@ -132,7 +130,7 @@ class RunwayApiClient : VideoApiClient {
     }
 
     override suspend fun getVideoStatus(taskId: String): Result<VideoStatusResponse> {
-        val url = "$baseUrl/tasks/$taskId"
+        val url = "${baseUrl()}/tasks/$taskId"
         return executeAndParse(url, emptyMap()) { body ->
             val parsed = gson.fromJson(body, Map::class.java)
             val status = parsed["status"] as? String ?: "unknown"
@@ -152,7 +150,7 @@ class RunwayApiClient : VideoApiClient {
     }
 
     override suspend fun cancelTask(taskId: String): Result<Boolean> {
-        val url = "$baseUrl/tasks/$taskId/cancel"
+        val url = "${baseUrl()}/tasks/$taskId/cancel"
         return try {
             val request = Request.Builder()
                 .url(url)
@@ -198,18 +196,18 @@ class RunwayApiClient : VideoApiClient {
                 .url(url)
                 .headers(buildHeaders())
 
-            val response = if (body.isEmpty()) {
+            val httpRequest = if (body.isEmpty()) {
                 requestBuilder.get()
             } else {
                 val json = gson.toJson(body)
                 requestBuilder.post(json.toRequestBody("application/json".toMediaType()))
             }.build()
 
-            val response = client.newCall(response).execute()
-            val responseBody = response.body?.string()
+            val httpResponse = client.newCall(httpRequest).execute()
+            val responseBody = httpResponse.body?.string()
 
-            if (!response.isSuccessful) {
-                return@withContext Result.failure(IOException("HTTP ${response.code}: $responseBody"))
+            if (!httpResponse.isSuccessful) {
+                return@withContext Result.failure(IOException("HTTP ${httpResponse.code}: $responseBody"))
             }
 
             Result.success(parser(responseBody ?: ""))

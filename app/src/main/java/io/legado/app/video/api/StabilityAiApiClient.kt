@@ -30,14 +30,14 @@ class StabilityAiApiClient : VideoApiClient {
     private fun apiKey(): String = config.apiKey
 
     private fun buildHeaders(): Headers = Headers.Builder()
-        .add("Authorization", "Bearer $apiKey")
+        .add("Authorization", "Bearer ${apiKey()}")
         .add("Content-Type", "application/json")
         .build()
 
     override suspend fun testConnection(): Result<ConnectionTestResult> = withContext(Dispatchers.IO) {
         val result = ConnectionTestResult()
         val request = Request.Builder()
-            .url("$baseUrl/v1/user/account")
+            .url("${baseUrl()}/v1/user/account")
             .headers(buildHeaders())
             .get()
             .build()
@@ -76,7 +76,7 @@ class StabilityAiApiClient : VideoApiClient {
         style: String?
     ): Result<ImageResponse> {
         val modelName = model ?: config.imageModel ?: "stable-diffusion-xl-1.0"
-        val url = "$baseUrl/v1/generation/$modelName/text-to-image"
+        val url = "${baseUrl()}/v1/generation/$modelName/text-to-image"
 
         val requestBody = mapOf(
             "text_prompts" to listOf(mapOf("text" to prompt, "weight" to 1.0)),

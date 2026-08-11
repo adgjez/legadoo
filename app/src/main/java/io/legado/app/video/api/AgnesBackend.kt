@@ -286,7 +286,7 @@ class AgnesBackend(
                     else -> delay(interval)
                 }
             }.onFailure { delay(interval) }
-            interval = (interval * 1.2).coerceAtMost(10000)
+            interval = (interval * 1.2).toLong().coerceAtMost(10000)
         }
         return Result.failure(IOException("视频生成超时"))
     }
@@ -316,53 +316,3 @@ data class ProviderCredentialConfig(
     val baseUrl: String,
     val extraFields: Map<String, String> = emptyMap()
 )
-
-private class RateLimiter(private val maxRequests: Int = 20, private val windowMs: Long = 60000) {
-    private val timestamps = mutableListOf<Long>()
-    @Synchronized
-    fun tryAcquire(): Boolean {
-        val now = System.currentTimeMillis()
-        synchronized(this) {
-            timestamps.removeAll { now - it > windowMs }
-            if (timestamps.size < maxRequests) {
-                timestamps.add(now)
-                return true
-            }
-            return false
-        }
-    }
-}
-
-private class RateLimitInterceptor(
-    private val rateLimiters: ConcurrentHashMap<String, RateLimiter>
-) : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val path = chain.request().url.encodedPath
-        val limiterKey = when {
-            path.contains("/videos") -> "video"
-            path.contains("/images") -> "image"
-            path.contains("/chat") -> "chat"
-            else -> "default"
-        }
-        val limiter = rateLimiters.getOrPut(limiterKey) { RateLimiter() }
-        if (!limiter.tryAcquire()) {
-            Thread.sleep(2000)
-            if (!limiter.tryAcquire()) {
-                throw IOException("请求过于频繁")
-            }
-        }
-        return chain.proceed(chain.request())
-    }
-}
-
-private class LoggingInterceptor : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
-        val startTime = System.currentTimeMillis()
-        Log.d("VideoAPI", "→ ${request.method} ${request.url}")
-        val response = chain.proceed(request)
-        val elapsed = System.currentTimeMillis() - startTime
-        Log.d("VideoAPI", "← ${response.code} (${elapsed}ms)")
-        return response
-    }
-}

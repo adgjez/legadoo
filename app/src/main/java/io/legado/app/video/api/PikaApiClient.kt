@@ -31,14 +31,14 @@ class PikaApiClient : VideoApiClient {
     private fun apiKey(): String = config.apiKey
 
     private fun buildHeaders(): Headers = Headers.Builder()
-        .add("Authorization", "Bearer $apiKey")
+        .add("Authorization", "Bearer ${apiKey()}")
         .add("Content-Type", "application/json")
         .build()
 
     override suspend fun testConnection(): Result<ConnectionTestResult> = withContext(Dispatchers.IO) {
         val result = ConnectionTestResult()
         val request = Request.Builder()
-            .url("$baseUrl/v1/models")
+            .url("${baseUrl()}/v1/models")
             .headers(buildHeaders())
             .get()
             .build()
@@ -87,7 +87,7 @@ class PikaApiClient : VideoApiClient {
         aspectRatio: String
     ): Result<VideoResponse> {
         val modelName = model ?: config.videoModel ?: "pika-1.5"
-        val url = "$baseUrl/v1/videos/generate"
+        val url = "${baseUrl()}/v1/videos/generate"
         
         val requestBody = mutableMapOf<String, Any?>(
             "model" to modelName,
@@ -127,7 +127,7 @@ class PikaApiClient : VideoApiClient {
     }
 
     override suspend fun getVideoStatus(taskId: String): Result<VideoStatusResponse> {
-        val url = "$baseUrl/v1/videos/$taskId"
+        val url = "${baseUrl()}/v1/videos/$taskId"
         return try {
             val request = Request.Builder()
                 .url(url)
@@ -177,7 +177,7 @@ class PikaApiClient : VideoApiClient {
                     "failed" -> return Result.failure(IOException("Pika 视频生成失败"))
                     else -> {
                         delay(interval)
-                        interval = (interval * 1.5).coerceAtMost(10000)
+                        interval = (interval * 1.5).toLong().coerceAtMost(10000)
                     }
                 }
             }.onFailure {

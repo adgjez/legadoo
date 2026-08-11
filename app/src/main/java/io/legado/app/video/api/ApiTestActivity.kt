@@ -9,7 +9,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -230,17 +236,15 @@ fun ApiTestScreen(onBack: () -> Unit) {
                                     scope.launch {
                                         chatTestRunning = true
                                         chatResponse = ""
-                                        val chatResult = client.chatCompletion(
-                                            AgnesChatRequest(
-                                                model = AgnesConfig.chatModel,
-                                                messages = listOf(
-                                                    AgnesChatMessage(role = "user", content = "你好，请用一句话介绍你自己")
-                                                ),
-                                                maxTokens = 100
-                                            )
+                                        val chatResult = client.generateChat(
+                                            messages = listOf(
+                                                ChatMessage(role = "user", content = "你好，请用一句话介绍你自己")
+                                            ),
+                                            model = AgnesConfig.chatModel,
+                                            maxTokens = 100
                                         )
                                         chatResult.onSuccess { response ->
-                                            chatResponse = response.choices?.firstOrNull()?.message?.content ?: "无响应"
+                                            chatResponse = response.content
                                         }.onFailure {
                                             chatResponse = "错误: ${it.message}"
                                         }
@@ -285,15 +289,14 @@ fun ApiTestScreen(onBack: () -> Unit) {
                                         imageTestRunning = true
                                         imageTestResult = ""
                                         val imageResult = client.generateImage(
-                                            AgnesImageRequest(
-                                                model = AgnesConfig.imageModel,
-                                                prompt = "一个美丽的日落风景，金色的阳光洒在山脉上，电影级画质",
-                                                size = "1280x720",
-                                                n = 1
-                                            )
+                                            prompt = "一个美丽的日落风景，金色的阳光洒在山脉上，电影级画质",
+                                            model = AgnesConfig.imageModel,
+                                            width = 1280,
+                                            height = 720,
+                                            count = 1
                                         )
                                         imageResult.onSuccess { response ->
-                                            val urls = response.data?.mapNotNull { it.url } ?: emptyList()
+                                            val urls = response.images.mapNotNull { it.url }
                                             imageTestResult = if (urls.isNotEmpty()) {
                                                 "✅ 成功生成 ${urls.size} 张图片\nURL: ${urls.first().take(80)}..."
                                             } else {

@@ -87,7 +87,7 @@ object EndpointRouter {
                 if (mediaType == MediaType.VIDEO) ProviderEndpoint.ARK_SEEDANCE
                 else ProviderEndpoint.ARK_IMAGE
             }
-            modelLower.contains("seedance") || modelLower.contains("wanx") -> ProviderEndpoint.ARK_VIDEO
+            modelLower.contains("seedance") || modelLower.contains("wanx") -> ProviderEndpoint.ARK_SEEDANCE
             modelLower.contains("kling") -> {
                 if (mediaType == MediaType.VIDEO) ProviderEndpoint.KLING_VIDEO
                 else ProviderEndpoint.KLING_IMAGE
@@ -189,12 +189,6 @@ data class UnifiedTextRequest(
     val stream: Boolean = false
 )
 
-enum class ResponseFormat {
-    URL,
-    BASE64,
-    FILE_PATH
-}
-
 /**
  * 分辨率解析器 - 根据 provider 能力选择最佳分辨率
  */
@@ -245,7 +239,9 @@ object ResolutionResolver {
             else -> {
                 val parts = res.split("x")
                 if (parts.size == 2) {
-                    parts[0].toIntOrNull() ?: 1024 to (parts[1].toIntOrNull() ?: 1024)
+                    val w = parts[0].toIntOrNull() ?: 1024
+                    val h = parts[1].toIntOrNull() ?: 1024
+                    w to h
                 } else 1024 to 1024
             }
         }

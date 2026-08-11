@@ -1,6 +1,7 @@
 package io.legado.app.video.api
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -27,25 +28,32 @@ class TaskDeduplicationManager {
     private val taskIdMap = mutableMapOf<String, String>()
     private val mutex = kotlinx.coroutines.sync.Mutex()
 
-    suspend fun tryAcquire(key: TaskDedupeKey): String? = mutex.withLock {
-        val compositeKey = key.toCompositeKey()
-        if (compositeKey in activeTasks) {
-            return taskIdMap[compositeKey]
+    suspend fun tryAcquire(key: TaskDedupeKey): String? {
+        return mutex.withLock {
+            val compositeKey = key.toCompositeKey()
+            if (compositeKey in activeTasks) {
+                taskIdMap[compositeKey]
+            } else {
+                val taskId = "task_${System.currentTimeMillis()}_${activeTasks.size}"
+                activeTasks.add(compositeKey)
+                taskIdMap[compositeKey] = taskId
+                null
+            }
         }
-        val taskId = "task_${System.currentTimeMillis()}_${activeTasks.size}"
-        activeTasks.add(compositeKey)
-        taskIdMap[compositeKey] = taskId
-        return null
     }
 
-    suspend fun complete(key: TaskDedupeKey) = mutex.withLock {
-        val compositeKey = key.toCompositeKey()
-        activeTasks.remove(compositeKey)
-        taskIdMap.remove(compositeKey)
+    suspend fun complete(key: TaskDedupeKey) {
+        mutex.withLock {
+            val compositeKey = key.toCompositeKey()
+            activeTasks.remove(compositeKey)
+            taskIdMap.remove(compositeKey)
+        }
     }
 
-    suspend fun forceRelease(key: TaskDedupeKey) = mutex.withLock {
-        activeTasks.remove(key.toCompositeKey())
+    suspend fun forceRelease(key: TaskDedupeKey) {
+        mutex.withLock {
+            activeTasks.remove(key.toCompositeKey())
+        }
     }
 
     fun isActive(key: TaskDedupeKey): Boolean {
@@ -73,7 +81,7 @@ class DeadlockSafeScheduler(
         val priority: Int,
         val dependencies: List<String>,
         val action: suspend () -> Result<Any>,
-        val timeoutMs: Long = this@DeadlockSafeScheduler.timeoutMs
+        val timeoutMs: Long = 300_000L
     )
 
     suspend fun schedule(task: ScheduledTask): String {

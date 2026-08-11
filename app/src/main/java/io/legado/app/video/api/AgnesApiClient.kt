@@ -28,9 +28,9 @@ class AgnesApiClient(
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(config.timeoutSeconds, TimeUnit.SECONDS)
-            .readTimeout(config.timeoutSeconds * 3, TimeUnit.SECONDS)
-            .writeTimeout(config.timeoutSeconds, TimeUnit.SECONDS)
+            .connectTimeout(config.timeoutSeconds.toLong(), TimeUnit.SECONDS)
+            .readTimeout((config.timeoutSeconds * 3).toLong(), TimeUnit.SECONDS)
+            .writeTimeout(config.timeoutSeconds.toLong(), TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .addInterceptor(LoggingInterceptor())
             .addInterceptor(RateLimitInterceptor(rateLimiters))
@@ -139,8 +139,8 @@ class AgnesApiClient(
             Result.success(
                 ChatResponse(
                     content = content,
-                    model = parsed.model,
-                    usage = parsed.usage?.let { TokenUsage(it.promptTokens, it.completionTokens, it.totalTokens) }
+                    model = model ?: config.chatModel,
+                    usage = parsed.usage?.let { TokenUsage(promptTokens = it.promptTokens, completionTokens = it.completionTokens, totalTokens = it.totalTokens) }
                 )
             )
         } catch (e: Exception) {
@@ -161,8 +161,7 @@ class AgnesApiClient(
             model = model ?: config.imageModel,
             prompt = prompt,
             size = "${width}x${height}",
-            n = count,
-            style = style
+            n = count
         )
         val body = gson.toJson(request)
         val httpRequest = Request.Builder()
@@ -177,10 +176,10 @@ class AgnesApiClient(
             val images = parsed.data?.map { data ->
                 GeneratedImage(
                     url = data.url,
-                    base64 = data.base64
+                    base64 = data.b64Json
                 )
             } ?: emptyList()
-            Result.success(ImageResponse(images = images, model = parsed.model))
+            Result.success(ImageResponse(images = images, model = model ?: config.imageModel))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -198,7 +197,7 @@ class AgnesApiClient(
             model = model ?: config.videoModel,
             prompt = prompt,
             imageUrls = imageUrl?.let { listOf(it) },
-            durationSeconds = duration,
+            duration = duration,
             aspectRatio = aspectRatio
         )
         val body = gson.toJson(request)
@@ -328,7 +327,7 @@ class AgnesApiClient(
         maxIntervalMs: Long = 10000,
         onProgress: ((Int, String) -> Unit)? = null
     ): Result<AgnesVideoData> {
-        var interval = initialInterval
+        var interval = initialIntervalMs
         var consecutiveErrors = 0
 
         repeat(maxAttempts) { attempt ->
@@ -341,9 +340,12 @@ class AgnesApiClient(
                 when (status) {
                     "completed", "succeeded", "success" -> {
                         val videoData = response.data?.firstOrNull()
-                            ?: return@onSuccess Result.failure(IOException("No video data in completed response"))
-                        onProgress?.invoke(100, "生成完成")
-                        return Result.success(videoData)
+                        if (videoData != null) {
+                            onProgress?.invoke(100, "生成完成")
+                            return Result.success(videoData)
+                        } else {
+                            onProgress?.invoke(progress, "无视频数据")
+                        }
                     }
                     "failed", "cancelled", "error" -> {
                         val errorMsg = response.error?.message ?: status
@@ -442,14 +444,7 @@ class AgnesApiClient(
     }
 }
 
-data class ConnectionTestResult(
-    var success: Boolean = false,
-    var message: String = "",
-    var latencyMs: Long = 0,
-    var httpCode: Int = 0
-)
-
-private class RateLimiter(private val maxRequests: Int = 20, private val windowMs: Long = 60000) {
+internal class RateLimiter(private val maxRequests: Int = 20, private val windowMs: Long = 60000) {
     private val timestamps = mutableListOf<Long>()
     private val lock = Any()
 
@@ -467,7 +462,7 @@ private class RateLimiter(private val maxRequests: Int = 20, private val windowM
     }
 }
 
-private class RateLimitInterceptor(
+internal class RateLimitInterceptor(
     private val rateLimiters: ConcurrentHashMap<String, RateLimiter>
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -492,7 +487,7 @@ private class RateLimitInterceptor(
     }
 }
 
-private class LoggingInterceptor : Interceptor {
+internal class LoggingInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val url = request.url.toString()

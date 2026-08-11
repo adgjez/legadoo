@@ -32,13 +32,13 @@ class DalleApiClient : VideoApiClient {
     private fun apiKey(): String = config.apiKey
 
     private fun buildHeaders(): Headers = Headers.Builder()
-        .add("Authorization", "Bearer $apiKey")
+        .add("Authorization", "Bearer ${apiKey()}")
         .add("Content-Type", "application/json")
         .build()
 
     override suspend fun testConnection(): Result<ConnectionTestResult> = withContext(Dispatchers.IO) {
         val result = ConnectionTestResult()
-        val testUrl = "$baseUrl/models"
+        val testUrl = "${baseUrl()}/models"
 
         val request = Request.Builder()
             .url(testUrl)
@@ -75,7 +75,7 @@ class DalleApiClient : VideoApiClient {
         maxTokens: Int
     ): Result<ChatResponse> {
         val modelName = model ?: config.chatModel ?: "gpt-4o"
-        val url = "$baseUrl/chat/completions"
+        val url = "${baseUrl()}/chat/completions"
         val requestBody = mapOf(
             "model" to modelName,
             "messages" to messages.map { mapOf("role" to it.role, "content" to it.content) },
@@ -102,7 +102,7 @@ class DalleApiClient : VideoApiClient {
         style: String?
     ): Result<ImageResponse> {
         val modelName = model ?: config.imageModel ?: "dall-e-3"
-        val url = "$baseUrl/images/generations"
+        val url = "${baseUrl()}/images/generations"
         val requestBody = mapOf(
             "model" to modelName,
             "prompt" to prompt,

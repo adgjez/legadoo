@@ -36,14 +36,16 @@ object ProviderRegistry {
     fun getAll(): List<ProviderDescriptor> = providers.values.toList()
 
     fun getActiveProviders(): List<Provider> = activeProviders.values.toList()
-    
-    fun getImageProviders(): List<ProviderDescriptor> = 
+
+    fun getAllProviderIds(): List<String> = providers.keys.toList()
+
+    fun getImageProviders(): List<ProviderDescriptor> =
         providers.values.filter { it.capabilities.supportsImage }
-    
-    fun getVideoProviders(): List<ProviderDescriptor> = 
+
+    fun getVideoProviders(): List<ProviderDescriptor> =
         providers.values.filter { it.capabilities.supportsVideo }
-    
-    fun getTextProviders(): List<ProviderDescriptor> = 
+
+    fun getTextProviders(): List<ProviderDescriptor> =
         providers.values.filter { it.capabilities.supportsText }
     
     fun getByCapability(capability: MediaCapability): List<ProviderDescriptor> =
@@ -74,13 +76,17 @@ object ProviderRegistry {
             ?: providers.firstOrNull()?.key 
             ?: AGNES
     }
+
+    fun getDefaultProviderId(): String {
+        return providers.values.firstOrNull { it.isDefault }?.key ?: AGNES
+    }
     
     fun initDefaults() {
         register(ProviderDescriptor(
             key = AGNES,
             displayName = "Agnes AI",
             description = "国内 AI 服务商，支持图像/视频/文本生成",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = true
@@ -99,7 +105,7 @@ object ProviderRegistry {
             key = DALL_E,
             displayName = "DALL-E",
             description = "OpenAI 图像生成模型",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = false,
                 supportsText = true
@@ -108,16 +114,14 @@ object ProviderRegistry {
                 CredentialField("api_key", "API Key", isSecret = true)
             ),
             isDefault = false,
-            isBuiltin = true,
-            imageBackendFactory = { DalleImageBackend() },
-            textBackendFactory = { DalleTextBackend() }
+            isBuiltin = true
         ))
         
         register(ProviderDescriptor(
             key = RUNWAY,
             displayName = "Runway",
             description = "专业视频生成平台",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = false
@@ -126,16 +130,14 @@ object ProviderRegistry {
                 CredentialField("api_key", "API Key", isSecret = true)
             ),
             isDefault = false,
-            isBuiltin = true,
-            imageBackendFactory = { RunwayImageBackend() },
-            videoBackendFactory = { RunwayVideoBackend() }
+            isBuiltin = true
         ))
         
         register(ProviderDescriptor(
             key = PIKA,
             displayName = "Pika",
             description = "快速视频生成",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = false,
                 supportsVideo = true,
                 supportsText = false
@@ -144,15 +146,14 @@ object ProviderRegistry {
                 CredentialField("api_key", "API Key", isSecret = true)
             ),
             isDefault = false,
-            isBuiltin = true,
-            videoBackendFactory = { PikaVideoBackend() }
+            isBuiltin = true
         ))
         
         register(ProviderDescriptor(
             key = STABILITY_AI,
             displayName = "Stability AI",
             description = "Stable Diffusion 服务商",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = false,
                 supportsText = false
@@ -161,15 +162,14 @@ object ProviderRegistry {
                 CredentialField("api_key", "API Key", isSecret = true)
             ),
             isDefault = false,
-            isBuiltin = true,
-            imageBackendFactory = { StabilityImageBackend() }
+            isBuiltin = true
         ))
         
         register(ProviderDescriptor(
             key = NEWAPI,
             displayName = "NewAPI",
             description = "统一视频 API 中转（兼容多家服务商）",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = true
@@ -189,7 +189,7 @@ object ProviderRegistry {
             key = GEMINI,
             displayName = "Google Gemini",
             description = "Google 多模态模型（图像/视频/文本）",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = true
@@ -205,7 +205,7 @@ object ProviderRegistry {
             key = GROK,
             displayName = "xAI Grok",
             description = "xAI Grok 模型（Aurora 图像 + Grok Video）",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = true
@@ -221,7 +221,7 @@ object ProviderRegistry {
             key = ARK,
             displayName = "火山方舟 (Seedream/Seedance)",
             description = "字节跳动视频生成模型",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = false
@@ -238,7 +238,7 @@ object ProviderRegistry {
             key = KLING,
             displayName = "可灵 Kling",
             description = "快手可灵视频生成模型",
-            capabilities = ProviderCapabilities(
+            capabilities = ProviderCapabilityInfo(
                 supportsImage = true,
                 supportsVideo = true,
                 supportsText = false
@@ -256,7 +256,7 @@ data class ProviderDescriptor(
     val key: String,
     val displayName: String,
     val description: String,
-    val capabilities: ProviderCapabilities,
+    val capabilities: ProviderCapabilityInfo,
     val credentialFields: List<CredentialField>,
     val isDefault: Boolean = false,
     val isBuiltin: Boolean = true,
@@ -265,7 +265,7 @@ data class ProviderDescriptor(
     val textBackendFactory: (() -> TextBackend)? = null
 )
 
-data class ProviderCapabilities(
+data class ProviderCapabilityInfo(
     val supportsImage: Boolean,
     val supportsVideo: Boolean,
     val supportsText: Boolean

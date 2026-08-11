@@ -142,7 +142,7 @@ class ProviderHealthChecker(
             val result = BackendRouter.generateText(
                 TextGenerationRequest(
                     messages = listOf(
-                        mapOf("role" to "user", "content" to "ping")
+                        ChatMessage(role = "user", content = "ping")
                     ),
                     maxTokens = 10
                 )

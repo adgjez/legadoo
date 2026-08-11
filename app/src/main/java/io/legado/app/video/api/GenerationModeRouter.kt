@@ -214,12 +214,12 @@ data class GenerationConfig(
             return when {
                 // 无角色的纯氛围/MV → SINGLE 最快最便宜
                 distinctCharacters == 0 && !hasDialogue ->
-                    copy(mode = GenerationMode.SINGLE)
+                    GenerationConfig(mode = GenerationMode.SINGLE)
                 // 镜头数很多的四格漫画/章节式 → GRID
                 totalSegments >= 8 && budgetTier != BudgetTier.QUALITY ->
-                    copy(mode = GenerationMode.GRID, gridRows = 2, gridCols = 4)
+                    GenerationConfig(mode = GenerationMode.GRID, gridRows = 2, gridCols = 4)
                 // 默认：多角色叙事 → REFERENCE_VIDEO
-                else -> copy(mode = GenerationMode.REFERENCE_VIDEO)
+                else -> GenerationConfig(mode = GenerationMode.REFERENCE_VIDEO)
             }
         }
     }
@@ -253,7 +253,7 @@ object ModeCapabilityCatalog {
             bestFor = "MV/氛围/广告片（单镜头风格差异大）",
             minSegments = 1,
             maxSegments = 6,
-            requiredRefTypes = setOf(ReferenceRole.GENERAL)
+            requiredRefTypes = setOf(ReferenceRole.REFERENCE)
         ),
         GenerationMode.GRID to ModeCapabilityProfile(
             mode = GenerationMode.GRID,
@@ -344,7 +344,7 @@ class GenerationModeRouter {
                     if (config.usePreviousFrameAsRef) refs += ReferenceRole.PREVIOUS_FRAME
                 }
                 GenerationMode.GRID -> refs += ReferenceRole.STYLE
-                else -> refs += ReferenceRole.GENERAL
+                else -> refs += ReferenceRole.REFERENCE
             }
             DryRunFrame(
                 frameId = seg.frameId,

@@ -71,7 +71,7 @@ object BackendRouter {
 
             val startTime = System.currentTimeMillis()
             try {
-                val result = provider.generateImage(request)
+                val result = provider.generate(request)
                 result.fold(
                     onSuccess = {
                         healthChecker.recordSuccess(provider.providerKey, System.currentTimeMillis() - startTime)
@@ -90,7 +90,7 @@ object BackendRouter {
 
         val directProvider = resolveImageProvider(request.model)
         if (directProvider != null && directProvider !in candidates.mapNotNull { if (it is String) null else directProvider }) {
-            directProvider.generateImage(request)
+            directProvider.generate(request)
         } else {
             Result.failure(lastError ?: IllegalStateException("No image provider configured"))
         }
@@ -115,7 +115,7 @@ object BackendRouter {
 
             val startTime = System.currentTimeMillis()
             try {
-                val result = provider.generateVideo(request)
+                val result = provider.generate(request)
                 result.fold(
                     onSuccess = {
                         healthChecker.recordSuccess(provider.providerKey, System.currentTimeMillis() - startTime)
@@ -134,7 +134,7 @@ object BackendRouter {
 
         val directProvider = resolveVideoProvider(request.model)
         if (directProvider != null) {
-            directProvider.generateVideo(request)
+            directProvider.generate(request)
         } else {
             Result.failure(lastError ?: IllegalStateException("No video provider configured"))
         }
@@ -179,7 +179,7 @@ object BackendRouter {
 
             val startTime = System.currentTimeMillis()
             try {
-                val result = provider.generateText(request)
+                val result = provider.generate(request)
                 result.fold(
                     onSuccess = {
                         healthChecker.recordSuccess(provider.providerKey, System.currentTimeMillis() - startTime)
@@ -198,7 +198,7 @@ object BackendRouter {
 
         val directProvider = resolveTextProvider(request.model)
         if (directProvider != null) {
-            directProvider.generateText(request)
+            directProvider.generate(request)
         } else {
             Result.failure(lastError ?: IllegalStateException("No text provider configured"))
         }
@@ -217,9 +217,8 @@ object BackendRouter {
     private fun resolveImageProvider(model: String?): ImageBackendProvider? {
         val providers = ProviderRegistry.getActiveProviders()
         if (model != null) {
-            return providers.firstOrNull { it.supportsModel(model) && it is ImageBackendProvider } as? ImageBackendProvider
-                ?: providers.filterIsInstance<ImageBackendProvider>()
-                    .firstOrNull { it.supportsModel(model) }
+            return providers.filterIsInstance<ImageBackendProvider>()
+                .firstOrNull { it.imageCapabilities.supportedModels.contains(model) }
         }
         return providers.filterIsInstance<ImageBackendProvider>().firstOrNull()
     }
@@ -228,7 +227,7 @@ object BackendRouter {
         val providers = ProviderRegistry.getActiveProviders()
         if (model != null) {
             return providers.filterIsInstance<VideoBackendProvider>()
-                .firstOrNull { it.supportsModel(model) }
+                .firstOrNull { it.videoCapabilities.supportedModels.contains(model) }
         }
         return providers.filterIsInstance<VideoBackendProvider>().firstOrNull()
     }
@@ -237,7 +236,7 @@ object BackendRouter {
         val providers = ProviderRegistry.getActiveProviders()
         if (model != null) {
             return providers.filterIsInstance<TextBackendProvider>()
-                .firstOrNull { it.supportsModel(model) }
+                .firstOrNull { it.textCapabilities.supportedModels.contains(model) }
         }
         return providers.filterIsInstance<TextBackendProvider>().firstOrNull()
     }
@@ -299,47 +298,8 @@ interface TextBackendProvider : TextBackend {
 }
 
 interface Provider : ImageBackendProvider, VideoBackendProvider, TextBackendProvider {
-    val providerKey: String
-    val providerName: String
-}
-
-// ========== 额外辅助数据类 ==========
-
-data class GeneratedImage(
-    val url: String? = null,
-    val base64: String? = null,
-    val localPath: String? = null,
-    val width: Int = 0,
-    val height: Int = 0
-)
-
-data class TokenUsage(
-    val inputTokens: Int = 0,
-    val outputTokens: Int = 0
-)
-
-data class ReferenceImage(
-    val url: String? = null,
-    val localPath: String? = null,
-    val label: String? = null,
-    val description: String? = null,
-    val role: ReferenceRole = ReferenceRole.REFERENCE
-)
-
-enum class ReferenceRole {
-    CHARACTER,
-    SCENE,
-    PROP,
-    STYLE,
-    REFERENCE,
-    PREVIOUS_FRAME,
-    GRID
-}
-
-enum class ResponseFormat {
-    URL,
-    BASE64,
-    FILE_PATH
+    override val providerKey: String
+    override val providerName: String
 }
 
 // ========== 便捷扩展 ==========
