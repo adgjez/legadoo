@@ -534,7 +534,7 @@ class VideoAssembler(private val context: Context) {
         )
     }
 
-    fun availableBackends(): List<Pair<VideoAssemblyBackend, Boolean>> {
+    suspend fun availableBackends(): List<Pair<VideoAssemblyBackend, Boolean>> {
         return backends.map { it to runCatching { it.isAvailable(context) }.getOrDefault(false) }
     }
 
@@ -647,29 +647,6 @@ data class VideoSegment(
     val subtitleText: String? = null,
     val transitionType: TransitionType = TransitionType.NONE
 )
-
-enum class TransitionType {
-    NONE,
-    FADE,
-    DISSOLVE,
-    WIPE,
-    MATCH_CUT,
-    JUMP_CUT,
-    L_CUT,
-    J_CUT,
-    CROSS_FADE,
-    IRIS_IN,
-    IRIS_OUT,
-    SLIDE_LEFT,
-    SLIDE_RIGHT,
-    SLIDE_UP,
-    SLIDE_DOWN,
-    ZOOM_IN,
-    ZOOM_OUT,
-    BLUR,
-    FLASH_WHITE,
-    FLASH_BLACK
-}
 
 data class SubtitleStyle(
     val fontSize: Int = 24,

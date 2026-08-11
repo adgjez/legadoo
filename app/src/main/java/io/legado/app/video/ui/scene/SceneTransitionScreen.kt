@@ -308,4 +308,5 @@ private fun transitionIcon(type: TransitionType) = when (type) {
     TransitionType.SPLIT -> Icons.Default.CallSplit
     TransitionType.PAGE_TURN -> Icons.Default.MenuBook
     TransitionType.ENERGY -> Icons.Default.Bolt
+    else -> Icons.Default.Star
 }

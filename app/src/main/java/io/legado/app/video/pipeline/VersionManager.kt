@@ -8,7 +8,7 @@ import com.google.gson.GsonBuilder
 data class ScriptVersion(
     val versionId: String,
     val projectId: String,
-    val stage: PipelineStage,
+    val stage: ScriptStage,
     val contentSnapshot: String,
     val visualSnapshot: String?,
     val createdAt: Long,

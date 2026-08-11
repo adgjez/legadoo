@@ -1,6 +1,7 @@
 package io.legado.app.video.pipeline
 
 import io.legado.app.video.api.BackendRouter
+import io.legado.app.video.api.ChatMessage
 import io.legado.app.video.api.TextGenerationRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -53,8 +54,8 @@ $novelText
         val result = BackendRouter.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位专业的小说口播内容编辑。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage(role = "system", content = "你是一位专业的小说口播内容编辑。"),
+                    ChatMessage(role = "user", content = prompt)
                 ),
                 temperature = 0.3f,
                 maxTokens = 8192
@@ -84,9 +85,9 @@ $novelText
         try {
             val jsonContent = content.substringAfter("```json").substringBefore("```").trim()
             val array = jsonContent.trim().removeSurrounding("[").removeSurrounding("]")
-            val segmentObjects = array.split("},{"").mapIndexed { index, part ->
+            val segmentObjects = array.split("},{").mapIndexed { index, part ->
                 val adjusted = if (index == 0) part else "{$part"
-                if (index == array.split("},{"").size - 1) adjusted.removeSuffix("}")
+                if (index == array.split("},{").size - 1) adjusted.removeSuffix("}")
                 else adjusted
             }
 
@@ -159,8 +160,8 @@ $novelText
         val result = BackendRouter.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位专业的剧集动画编剧。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage(role = "system", content = "你是一位专业的剧集动画编剧。"),
+                    ChatMessage(role = "user", content = prompt)
                 ),
                 temperature = 0.3f,
                 maxTokens = 8192
@@ -227,6 +228,9 @@ $novelText
                 DramaUtterance(
                     utteranceId = "utt_1",
                     index = 1,
+                    speaker = null,
+                    dialogue = null,
+                    action = null,
                     sceneDescription = content.take(200),
                     status = SegmentStatus.CONTENT_READY
                 )
@@ -283,8 +287,8 @@ $novelText
             val result = BackendRouter.generateText(
                 TextGenerationRequest(
                     messages = listOf(
-                        mapOf("role" to "system", "content" to "你是一位专业的AI视频分镜提示词工程师。"),
-                        mapOf("role" to "user", "content" to prompt)
+                        ChatMessage(role = "system", content = "你是一位专业的AI视频分镜提示词工程师。"),
+                        ChatMessage(role = "user", content = prompt)
                     ),
                     temperature = 0.5f,
                     maxTokens = 2048
@@ -339,8 +343,8 @@ $novelText
             val result = BackendRouter.generateText(
                 TextGenerationRequest(
                     messages = listOf(
-                        mapOf("role" to "system", "content" to "你是一位专业的AI视频分镜提示词工程师。"),
-                        mapOf("role" to "user", "content" to prompt)
+                        ChatMessage(role = "system", content = "你是一位专业的AI视频分镜提示词工程师。"),
+                        ChatMessage(role = "user", content = prompt)
                     ),
                     temperature = 0.5f,
                     maxTokens = 2048
