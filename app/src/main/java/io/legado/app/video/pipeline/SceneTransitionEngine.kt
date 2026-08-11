@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 // ========== 转场效果 ==========
 
 enum class TransitionType(val displayName: String, val defaultDurationMs: Long) {
+    NONE("无转场", 0L),
     FADE("淡入淡出", 500L),
     DISSOLVE("溶解", 800L),
     SLIDE_LEFT("左滑", 400L),
@@ -27,6 +28,8 @@ enum class TransitionType(val displayName: String, val defaultDurationMs: Long) 
     ROTATE("旋转", 800L),
     WIPE("擦除", 500L),
     FLASH("闪光", 200L),
+    FLASH_WHITE("白闪", 200L),
+    FLASH_BLACK("黑闪", 200L),
     BLUR("模糊", 400L),
     GLITCH("故障效果", 300L),
     MORPH("变形", 1000L),
@@ -35,7 +38,13 @@ enum class TransitionType(val displayName: String, val defaultDurationMs: Long) 
     PUSH("推入", 400L),
     SPLIT("分裂", 600L),
     PAGE_TURN("翻页", 800L),
-    ENERGY("能量波", 500L)
+    ENERGY("能量波", 500L),
+    MATCH_CUT("匹配剪辑", 0L),
+    JUMP_CUT("跳切", 0L),
+    L_CUT("L型剪辑", 0L),
+    J_CUT("J型剪辑", 0L),
+    IRIS_IN("圆形展开", 500L),
+    IRIS_OUT("圆形收缩", 500L)
 }
 
 data class TransitionConfig(

@@ -1,6 +1,7 @@
 package io.legado.app.video.quality
 
 import io.legado.app.video.api.BackendRouter
+import io.legado.app.video.api.ChatMessage
 import io.legado.app.video.api.TextGenerationRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -118,8 +119,8 @@ class FrameConsistencyAnalyzer {
         val result = BackendRouter.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位视频分镜连贯性分析师。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage(role = "system", content = "你是一位视频分镜连贯性分析师。"),
+                    ChatMessage(role = "user", content = prompt)
                 ),
                 temperature = 0.1f,
                 maxTokens = 2048
@@ -218,8 +219,8 @@ class PromptQualityAssessor {
         val result = BackendRouter.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位AI提示词质量评估专家。"),
-                    mapOf("role" to "user", "content" to prompt_)
+                    ChatMessage(role = "system", content = "你是一位AI提示词质量评估专家。"),
+                    ChatMessage(role = "user", content = prompt_)
                 ),
                 temperature = 0.1f,
                 maxTokens = 2048
@@ -476,7 +477,7 @@ class QualityScorer(
 
     fun getScoreHistory(projectId: String): List<Float> = scoreHistory[projectId] ?: emptyList()
 
-    fun getScoreTrend(projectId: String): ScoreTrend? {
+    fun getScoreTrend(projectId: String): ScoreTrendReport? {
         val history = scoreHistory[projectId] ?: return null
         if (history.size < 2) return null
 
@@ -490,7 +491,7 @@ class QualityScorer(
             }
         } else ScoreTrend.STABLE
 
-        return ScoreTrend(
+        return ScoreTrendReport(
             projectId = projectId,
             currentScore = history.last(),
             averageScore = history.average().toFloat(),
@@ -521,7 +522,7 @@ enum class ScoreTrend {
     STABLE
 }
 
-data class ScoreTrend(
+data class ScoreTrendReport(
     val projectId: String,
     val currentScore: Float,
     val averageScore: Float,

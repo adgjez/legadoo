@@ -1,6 +1,7 @@
 package io.legado.app.video.pipeline
 
 import io.legado.app.video.api.BackendRouter
+import io.legado.app.video.api.ChatMessage
 import io.legado.app.video.api.TextGenerationRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -104,8 +105,8 @@ class StyleTransferEngine {
         val result = BackendRouter.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位视觉风格分析师。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage(role = "system", content = "你是一位视觉风格分析师。"),
+                    ChatMessage(role = "user", content = prompt)
                 ),
                 temperature = 0.1f,
                 maxTokens = 2048
@@ -197,7 +198,7 @@ class StyleTransferEngine {
  */
 
 object StylePresets {
-    val CINEMATIC = StylePreset(
+    val CINEMATIC = TransferStylePreset(
         name = "电影风格",
         description = "好莱坞电影质感，冷暖对比，大气光影",
         lighting = "dramatic cinematic lighting with strong contrast",
@@ -206,7 +207,7 @@ object StylePresets {
         intensity = 0.85f
     )
 
-    val ANIME = StylePreset(
+    val ANIME = TransferStylePreset(
         name = "动漫风格",
         description = "日式动画风格，鲜艳色彩，流畅线条",
         lighting = "soft cel-shaded lighting",
@@ -215,7 +216,7 @@ object StylePresets {
         intensity = 0.9f
     )
 
-    val CYBERPUNK = StylePreset(
+    val CYBERPUNK = TransferStylePreset(
         name = "赛博朋克",
         description = "未来科技感，霓虹灯光，雨夜氛围",
         lighting = "neon lighting, pink and blue glow, rain reflections",
@@ -224,7 +225,7 @@ object StylePresets {
         intensity = 0.9f
     )
 
-    val WATERCOLOR = StylePreset(
+    val WATERCOLOR = TransferStylePreset(
         name = "水彩风格",
         description = "水彩画质感，柔和过渡，艺术气息",
         lighting = "soft watercolor lighting, gentle washes",
@@ -233,7 +234,7 @@ object StylePresets {
         intensity = 0.8f
     )
 
-    val NOIR = StylePreset(
+    val NOIR = TransferStylePreset(
         name = "黑色电影",
         description = "黑白对比，硬朗光影，神秘氛围",
         lighting = "high contrast black and white lighting, dramatic shadows",
@@ -242,7 +243,7 @@ object StylePresets {
         intensity = 0.85f
     )
 
-    val COMIC = StylePreset(
+    val COMIC = TransferStylePreset(
         name = "漫画风格",
         description = "漫画质感，粗线条，分镜构图",
         lighting = "bold comic book lighting, halftone patterns",
@@ -251,7 +252,7 @@ object StylePresets {
         intensity = 0.9f
     )
 
-    val DOCUMENTARY = StylePreset(
+    val DOCUMENTARY = TransferStylePreset(
         name = "纪录片风格",
         description = "真实纪实感，自然光，纪实美学",
         lighting = "natural documentary lighting, candid",
@@ -262,10 +263,10 @@ object StylePresets {
 
     val list = listOf(CINEMATIC, ANIME, CYBERPUNK, WATERCOLOR, NOIR, COMIC, DOCUMENTARY)
 
-    fun getByName(name: String): StylePreset? = list.find { it.name == name }
+    fun getByName(name: String): TransferStylePreset? = list.find { it.name == name }
 }
 
-data class StylePreset(
+data class TransferStylePreset(
     val name: String,
     val description: String,
     val lighting: String,
