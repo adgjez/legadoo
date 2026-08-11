@@ -149,9 +149,11 @@ jobs:
       - name: Step 1/2 — Full assembleAppDebug (ALL ABIs)
         id: assemble
         continue-on-error: false
+        shell: bash -eo pipefail {0}
         run: |
           VERSION_CODE=$(($(date -u +%s) / 60))
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          set +e
           ./gradlew :app:assembleAppDebug \
             -PVERSION_CODE="$VERSION_CODE" \
             -PRELEASE_STORE_FILE=ci-debug.keystore \
@@ -163,7 +165,10 @@ jobs:
             --stacktrace \
             --console=plain \
             2>&1 | tee build-assemble.log
-          echo "assemble_rc=${PIPESTATUS[0]}" >> "$GITHUB_ENV"
+          ASSEMBLE_RC=${PIPESTATUS[0]}
+          set -e
+          echo "assemble_rc=$ASSEMBLE_RC" >> "$GITHUB_ENV"
+          exit "$ASSEMBLE_RC"
 
       # --------------------------------------------------------------
       # 9. 跑 Unit Test (:app:testDebugUnitTest)
@@ -173,14 +178,19 @@ jobs:
       - name: Step 2/2 — Run debug unit tests (Phase A-F)
         id: tests
         if: ${{ !inputs.skip_tests }}
+        shell: bash -eo pipefail {0}
         run: |
+          set +e
           ./gradlew :app:testDebugUnitTest \
             --no-daemon \
             --max-workers=2 \
             --stacktrace \
             --console=plain \
             2>&1 | tee build-test.log
-          echo "test_rc=${PIPESTATUS[0]}" >> "$GITHUB_ENV"
+          TEST_RC=${PIPESTATUS[0]}
+          set -e
+          echo "test_rc=$TEST_RC" >> "$GITHUB_ENV"
+          exit "$TEST_RC"
 
       # --------------------------------------------------------------
       # 10. 定位最终 APK / mapping / test reports

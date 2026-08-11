@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
     indices = [
         Index("projectId"),
         Index("sceneType"),
-        Index("status"),
+        Index("videoStatus"),
         Index("order")
     ],
     foreignKeys = [

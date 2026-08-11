@@ -9,7 +9,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import io.legado.app.data.VideoConverters
+import io.legado.app.video.data.VideoConverters
 import io.legado.app.data.dao.AiAgentDao
 import io.legado.app.data.dao.AiMemoryDao
 import io.legado.app.data.dao.AiReadAloudRoleCacheDao
