@@ -68,8 +68,8 @@ enum class QualityGrade(val minScore: Float, val label: String, val emoji: Strin
     ABOVE_AVERAGE(0.7f, "中等偏上", "B"),
     AVERAGE(0.6f, "中等", "C"),
     BELOW_AVERAGE(0.5f, "待改进", "D"),
-    POOR(0f, "不合格", "F")
-} {
+    POOR(0f, "不合格", "F");
+
     companion object {
         fun fromScore(score: Float): QualityGrade = when {
             score >= 0.9f -> EXCELLENT
