@@ -1,0 +1,73 @@
+{
+  "projectId": "phasef_project",
+  "aspectRatio": "9:16",
+  "totalDurationMs": 36000,
+  "totalSegments": 8,
+  "outputPath": "/workspace/_phasef/phasef.final.mp4",
+  "segments": [
+    {
+      "segmentId": "frame_00",
+      "sourcePath": "/workspace/_phasef/inputs/frame_00.mp4",
+      "startMs": 0,
+      "endMs": 3200,
+      "durationMs": 3200,
+      "subtitle": "Lin Yao walks along the misty shore."
+    },
+    {
+      "segmentId": "frame_01",
+      "sourcePath": "/workspace/_phasef/inputs/frame_01.mp4",
+      "startMs": 3200,
+      "endMs": 8000,
+      "durationMs": 4800,
+      "subtitle": "She finds a glowing jade pendant in the sand."
+    },
+    {
+      "segmentId": "frame_02",
+      "sourcePath": "/workspace/_phasef/inputs/frame_02.mp4",
+      "startMs": 8000,
+      "endMs": 10500,
+      "durationMs": 2500,
+      "subtitle": "The light bursts, a green vortex opens in the sky."
+    },
+    {
+      "segmentId": "frame_03",
+      "sourcePath": "/workspace/_phasef/inputs/frame_03.mp4",
+      "startMs": 10500,
+      "endMs": 16500,
+      "durationMs": 6000,
+      "subtitle": "She falls onto a giant mushroom; ShanHaiJie reveals itself."
+    },
+    {
+      "segmentId": "frame_04",
+      "sourcePath": "/workspace/_phasef/inputs/frame_04.mp4",
+      "startMs": 16500,
+      "endMs": 20500,
+      "durationMs": 4000,
+      "subtitle": "The mysterious silver-haired Mo Yuan appears: 'You are finally here.'"
+    },
+    {
+      "segmentId": "frame_05",
+      "sourcePath": "/workspace/_phasef/inputs/frame_05.mp4",
+      "startMs": 20500,
+      "endMs": 26000,
+      "durationMs": 5500,
+      "subtitle": "Their eyes meet --"
+    },
+    {
+      "segmentId": "frame_06",
+      "sourcePath": "/workspace/_phasef/inputs/frame_06.mp4",
+      "startMs": 26000,
+      "endMs": 29000,
+      "durationMs": 3000,
+      "subtitle": "Suddenly! A huge black bird descends from the sky!"
+    },
+    {
+      "segmentId": "frame_07",
+      "sourcePath": "/workspace/_phasef/inputs/frame_07.mp4",
+      "startMs": 29000,
+      "endMs": 36000,
+      "durationMs": 7000,
+      "subtitle": "Mo Yuan grabs her; they leap together into the waterfall."
+    }
+  ]
+}
