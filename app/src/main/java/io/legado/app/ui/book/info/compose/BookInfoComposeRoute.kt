@@ -199,7 +199,8 @@ data class BookInfoActions(
     val onClearCache: () -> Unit = {},
     val onSetupWebIntro: (WebView) -> Unit = {},
     val onRefreshEnabledChanged: (Boolean) -> Unit = {},
-    val onQuickActionsChanged: () -> Unit = {}
+    val onQuickActionsChanged: () -> Unit = {},
+    val onGenerateVideo: () -> Unit = {}
 )
 
 @Immutable
@@ -1873,6 +1874,13 @@ private fun BookInfoBottomActions(
                 primary = true,
                 style = style,
                 onClick = actions.onRead,
+                modifier = Modifier.weight(1f)
+            )
+            BookInfoActionButton(
+                text = "🎬 生成视频",
+                primary = false,
+                style = style,
+                onClick = actions.onGenerateVideo,
                 modifier = Modifier.weight(1f)
             )
         }

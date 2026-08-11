@@ -350,6 +350,23 @@
         <activity
             android:name=".ui.book.character.BookCharacterRelationActivity"
             android:launchMode="standard" />
+        <!-- AI视频工作台 -->
+        <activity
+            android:name=".video.VideoWorkbenchActivity"
+            android:launchMode="standard"
+            android:windowSoftInputMode="adjustResize" />
+        <!-- 小说转视频 -->
+        <activity
+            android:name=".video.converter.BookVideoActivity"
+            android:launchMode="standard" />
+        <!-- 工作流模板浏览 -->
+        <activity
+            android:name=".video.templates.TemplateBrowseActivity"
+            android:launchMode="standard" />
+        <!-- API测试 -->
+        <activity
+            android:name=".video.api.ApiTestActivity"
+            android:launchMode="standard" />
         <!-- 搜索界面 -->
         <activity
             android:name=".ui.book.search.SearchActivity"
@@ -739,6 +756,12 @@
         <meta-data
             android:name="channel"
             android:value="${APP_CHANNEL_VALUE}" />
+        
+        <!-- AI视频生成服务 -->
+        <service
+            android:name=".video.service.VideoGenerationService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
     <queries>

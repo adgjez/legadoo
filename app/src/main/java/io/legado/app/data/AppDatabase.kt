@@ -8,7 +8,8 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.TypeConverters
+import io.legado.app.data.VideoConverters
 import io.legado.app.data.dao.AiAgentDao
 import io.legado.app.data.dao.AiMemoryDao
 import io.legado.app.data.dao.AiReadAloudRoleCacheDao
@@ -44,6 +45,20 @@ import io.legado.app.data.dao.SearchBookDao
 import io.legado.app.data.dao.SearchKeywordDao
 import io.legado.app.data.dao.ServerDao
 import io.legado.app.data.dao.TxtTocRuleDao
+import io.legado.app.video.data.dao.VideoProjectDao
+import io.legado.app.video.data.dao.VideoCharacterDao
+import io.legado.app.video.data.dao.VideoSceneDao
+import io.legado.app.video.data.dao.VideoPropDao
+import io.legado.app.video.data.dao.VideoTaskDao
+import io.legado.app.video.data.dao.VideoAgentTraceDao
+import io.legado.app.video.data.dao.VideoProjectSettingsDao
+import io.legado.app.video.data.entities.VideoProject
+import io.legado.app.video.data.entities.VideoCharacter
+import io.legado.app.video.data.entities.VideoScene
+import io.legado.app.video.data.entities.VideoProp
+import io.legado.app.video.data.entities.VideoTask
+import io.legado.app.video.data.entities.VideoAgentTrace
+import io.legado.app.video.data.entities.VideoProjectSettings
 import io.legado.app.data.entities.AiAgentJob
 import io.legado.app.data.entities.AiAgentSession
 import io.legado.app.data.entities.AiAgentTrace
@@ -106,7 +121,7 @@ val appDb by lazy {
 }
 
 @Database(
-    version = 109,
+    version = 110,
     exportSchema = true,
     entities = [Book::class, BookGroup::class, BookSource::class, BookChapter::class,
         ReplaceRule::class, SearchBook::class, SearchKeyword::class, Cookie::class,
@@ -123,7 +138,9 @@ val appDb by lazy {
         ReadAloudSpeakerGroup::class, ReadAloudSpeakerGroupItem::class,
         AiReadAloudUsageRecord::class,
         AiAgentSession::class, AiAgentJob::class, AiAgentTrace::class,
-        AiMemoryItem::class, AiMemoryFragment::class, AiMemoryItemFts::class, AiMemoryFragmentFts::class],
+        AiMemoryItem::class, AiMemoryFragment::class, AiMemoryItemFts::class, AiMemoryFragmentFts::class,
+        VideoProject::class, VideoCharacter::class, VideoScene::class, VideoProp::class,
+        VideoTask::class, VideoAgentTrace::class, VideoProjectSettings::class],
     views = [BookSourcePart::class],
     autoMigrations = [
         AutoMigration(from = 43, to = 44),
@@ -176,6 +193,7 @@ val appDb by lazy {
         AutoMigration(from = 92, to = 93)
     ]
 )
+@TypeConverters(VideoConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract val bookDao: BookDao
@@ -213,6 +231,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val aiReadAloudUsageRecordDao: AiReadAloudUsageRecordDao
     abstract val aiAgentDao: AiAgentDao
     abstract val aiMemoryDao: AiMemoryDao
+    abstract val videoProjectDao: VideoProjectDao
+    abstract val videoCharacterDao: VideoCharacterDao
+    abstract val videoSceneDao: VideoSceneDao
+    abstract val videoPropDao: VideoPropDao
+    abstract val videoTaskDao: VideoTaskDao
+    abstract val videoAgentTraceDao: VideoAgentTraceDao
+    abstract val videoProjectSettingsDao: VideoProjectSettingsDao
 
     companion object {
 

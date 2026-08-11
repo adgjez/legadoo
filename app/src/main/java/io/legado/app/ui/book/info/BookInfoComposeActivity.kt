@@ -399,6 +399,11 @@ class BookInfoComposeActivity :
                 if (::refreshLayout.isInitialized) {
                     refreshLayout.isEnabled = enabled
                 }
+            },
+            onGenerateVideo = {
+                viewModel.getBook(false)?.let { book ->
+                    io.legado.app.video.converter.BookVideoActivity.start(this, book)
+                }
             }
         )
     }
