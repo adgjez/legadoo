@@ -28,7 +28,8 @@ data class VideoAgentTrace(
     val durationMs: Long = 0,
     val tokensUsed: Int = 0,
     val costAmount: Double = 0.0,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 ) {
     companion object {
         const val STATUS_STARTED = "started"
