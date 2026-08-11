@@ -143,29 +143,8 @@ jobs:
             ${{ runner.os }}-gradle-
 
       # --------------------------------------------------------------
-      # 7½. 清除 Gradle/KSP 脏缓存（cache restore 后，ksp/compile 前）
-      #   - actions/cache 恢复的 ~/.gradle/caches 会残留 Room KSP 旧产物，
-      #     远端触发 [MissingType]: AppDatabase references a type that is not present
-      #     本地却全部正常。这里一次性做 ksp 级硬清。
-      # --------------------------------------------------------------
-      - name: Purge KSP / Room incremental caches
-        shell: bash
-        run: |
-          # 用户级 Gradle caches — 只清 KSP 相关，不删 journal-1
-          rm -rf ~/.gradle/caches/*/ksp
-          rm -rf ~/.gradle/caches/build-cache-1/org.jetbrains.kotlin*ksp*
-          rm -rf ~/.gradle/caches/transforms-*/*ksp*
-          # 项目级 build 生成
-          rm -rf app/build/generated/ksp*
-          rm -rf app/build/tmp/ksp*
-          rm -rf app/build/ksp
-          rm -rf .gradle/**/ksp*
-
-      # --------------------------------------------------------------
       # 8. 全量编译 APK (:app:assembleAppDebug, 全部 ABI)
       #    VERSION_CODE = 当前 UTC 时间戳 / 60（每分钟唯一，避免和已有 build 冲突）
-      #    用后台 tail -F 实时输出控制台，gradlew 重定向到日志文件，
-      #    wait 后显式 exit gradlew RC（配合 pipefail 不吞错误码）
       # --------------------------------------------------------------
       - name: Step 1/2 — Full assembleAppDebug (ALL ABIs)
         id: assemble
@@ -174,10 +153,6 @@ jobs:
         run: |
           VERSION_CODE=$(($(date -u +%s) / 60))
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
-          LOG=build-assemble.log
-          : > "$LOG"
-          tail -n 0 -F "$LOG" &
-          TAIL_PID=$!
           set +e
           ./gradlew :app:assembleAppDebug \
             -PVERSION_CODE="$VERSION_CODE" \
@@ -189,10 +164,9 @@ jobs:
             --max-workers=2 \
             --stacktrace \
             --console=plain \
-            > "$LOG" 2>&1
-          ASSEMBLE_RC=$?
+            2>&1 | tee build-assemble.log
+          ASSEMBLE_RC=${PIPESTATUS[0]}
           set -e
-          sleep 1 ; kill $TAIL_PID 2>/dev/null ; wait $TAIL_PID 2>/dev/null
           echo "assemble_rc=$ASSEMBLE_RC" >> "$GITHUB_ENV"
           exit "$ASSEMBLE_RC"
 
@@ -206,20 +180,15 @@ jobs:
         if: ${{ !inputs.skip_tests }}
         shell: bash -eo pipefail {0}
         run: |
-          LOG=build-test.log
-          : > "$LOG"
-          tail -n 0 -F "$LOG" &
-          TAIL_PID=$!
           set +e
           ./gradlew :app:testDebugUnitTest \
             --no-daemon \
             --max-workers=2 \
             --stacktrace \
             --console=plain \
-            > "$LOG" 2>&1
-          TEST_RC=$?
+            2>&1 | tee build-test.log
+          TEST_RC=${PIPESTATUS[0]}
           set -e
-          sleep 1 ; kill $TAIL_PID 2>/dev/null ; wait $TAIL_PID 2>/dev/null
           echo "test_rc=$TEST_RC" >> "$GITHUB_ENV"
           exit "$TEST_RC"
 
