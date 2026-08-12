@@ -1,10 +1,6 @@
 package io.legado.app.video.agent
 
-import io.legado.app.video.api.AgentContext
-import io.legado.app.video.api.AgentResult
 import io.legado.app.video.api.AgnesApiClient
-import io.legado.app.video.api.AgnesChatMessage
-import io.legado.app.video.api.AgnesChatRequest
 import io.legado.app.video.data.entities.VideoProject
 import io.legado.app.video.data.entities.VideoScene
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +63,7 @@ class AgentOrchestrator(
                 AgentContext(
                     projectId = project.id,
                     input = scenes.joinToString("\n") { it.novelText },
-                    metadata = mapOf("style" to project.style, "genre" to (project.genre ?: ""))
+                    metadata = mapOf("style" to project.style, "genre" to project.genre)
                 )
             )
 
@@ -91,19 +87,10 @@ class AgentOrchestrator(
             val characterPrompts = mutableMapOf<String, String>()
             characters.forEachIndexed { index, character ->
                 val designResult = characterDesigner.designCharacter(
-                    AgentContext(
-                        projectId = project.id,
-                        input = character.personality,
-                        metadata = mapOf(
-                            "name" to character.name,
-                            "appearance" to character.appearance,
-                            "style" to project.style
-                        )
-                    )
+                    character,
+                    project.style
                 )
-                if (designResult.success) {
-                    characterPrompts[character.name] = designResult.output
-                }
+                characterPrompts[character.name] = designResult
                 _phases.update(1) {
                     it.copy(progress = (index + 1).toFloat() / characters.size.coerceAtLeast(1))
                 }
@@ -118,33 +105,30 @@ class AgentOrchestrator(
             val storyboardPlanner = StoryboardPlannerAgent(apiClient)
             val enhancedScenes = mutableListOf<VideoScene>()
 
+            val planResult = storyboardPlanner.planStoryboard(
+                AgentContext(
+                    projectId = project.id,
+                    input = scenes.joinToString("\n\n") { it.novelText },
+                    metadata = mapOf("style" to project.style)
+                ),
+                analysisResult = analysis,
+                targetDuration = project.targetDurationSeconds,
+                targetScenes = scenes.size.coerceAtLeast(1)
+            )
+
+            val storyboardPlan = planResult.structuredData as? StoryboardPlan
+            val planScenes = storyboardPlan?.scenes.orEmpty()
+
             scenes.forEachIndexed { index, scene ->
-                val charactersInScene = memory.getCharactersForScene(scene.novelText)
-                val characterContext = characterPrompts.filterKeys { it in charactersInScene }
-
-                val planResult = storyboardPlanner.planScene(
-                    AgentContext(
-                        projectId = project.id,
-                        input = scene.novelText,
-                        metadata = mapOf(
-                            "style" to project.style,
-                            "characters" to characterContext.values.joinToString("\n"),
-                            "previous_scene_summary" to enhancedScenes.lastOrNull()?.summary.orEmpty(),
-                            "scene_type" to scene.sceneType,
-                            "shot_type" to scene.shotType
-                        )
-                    )
-                )
-
-                if (planResult.success) {
-                    val plan = planResult.structuredData as? StoryboardScene
+                val plan = planScenes.getOrNull(index)
+                if (plan != null) {
                     enhancedScenes.add(scene.copy(
-                        visualPrompt = plan?.visualPrompt.orEmpty(),
-                        videoPrompt = plan?.videoPrompt.orEmpty(),
-                        shotType = plan?.shotType ?: scene.shotType,
-                        cameraMovement = plan?.cameraMovement ?: scene.cameraMovement,
-                        durationSeconds = plan?.durationSeconds ?: scene.durationSeconds,
-                        mood = plan?.mood ?: scene.mood
+                        visualPrompt = plan.visualPrompt,
+                        videoPrompt = plan.videoPrompt,
+                        shotType = plan.shotType,
+                        cameraMovement = plan.cameraMovement,
+                        durationSeconds = plan.durationSeconds,
+                        mood = plan.mood
                     ))
                 } else {
                     enhancedScenes.add(scene)
@@ -163,25 +147,14 @@ class AgentOrchestrator(
             val optimizedScenes = mutableListOf<VideoScene>()
 
             enhancedScenes.forEachIndexed { index, scene ->
-                val consistencyContext = if (config.enableCharacterConsistency) {
-                    memory.getCharacterConsistencyPrompt(scene.characterIds)
-                } else ""
-
-                val continuityContext = if (config.enableSceneContinuity && index > 0) {
-                    memory.getSceneContinuityPrompt(enhancedScenes[index - 1], scene)
-                } else ""
-
-                val optimizeResult = promptOptimizer.optimizePrompt(
-                    AgentContext(
-                        projectId = project.id,
-                        input = scene.visualPrompt,
-                        metadata = mapOf(
-                            "style" to project.style,
-                            "consistency" to consistencyContext,
-                            "continuity" to continuityContext,
-                            "custom" to config.customInstructions
-                        )
-                    )
+                val optimizeResult = promptOptimizer.optimizeVisualPrompt(
+                    originalPrompt = scene.visualPrompt,
+                    characterDescriptions = scene.characterIds.mapNotNull { characterPrompts[it] },
+                    sceneDescription = scene.summary,
+                    style = project.style,
+                    mood = scene.mood,
+                    shotType = scene.shotType,
+                    cameraMovement = scene.cameraMovement
                 )
 
                 if (optimizeResult.success) {

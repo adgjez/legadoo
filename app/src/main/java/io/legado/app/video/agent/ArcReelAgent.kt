@@ -1,6 +1,7 @@
 package io.legado.app.video.agent
 
 import io.legado.app.video.api.BackendRouter
+import io.legado.app.video.api.ChatMessage
 import io.legado.app.video.api.TextGenerationRequest
 import io.legado.app.video.api.TextGenerationResult
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +62,7 @@ class DeterministicMockLLMProvider(
     private var callIndex = 0
 
     override suspend fun generateText(request: TextGenerationRequest): Result<TextGenerationResult> {
-        val joinedPrompt = request.messages.joinToString("\n") { it["content"].toString() }
+        val joinedPrompt = request.messages.joinToString("\n") { it.content }
         val idx = callIndex++
 
         val response: String = when {
@@ -69,10 +70,10 @@ class DeterministicMockLLMProvider(
             joinedPrompt.contains("AI内容审查员") || joinedPrompt.contains("审查标准") -> {
                 // 解析当前迭代
                 val iter = "迭代：\\s*(\\d+)".toRegex().find(joinedPrompt)?.groupValues?.get(1)?.toIntOrNull() ?: 1
-                val firstLineSystem = request.messages.firstOrNull()?.get("content").toString()
+                val firstLineSystem = request.messages.firstOrNull()?.content ?: ""
                 val agentName = Regex("审查以下\\s*([^的]+)的输出").find(joinedPrompt)?.groupValues?.get(1)
                     ?: firstLineSystem.take(10)
-                plan.critiqueResponse(agentName, iter, request.messages.lastOrNull()?.get("content").toString())
+                plan.critiqueResponse(agentName, iter, request.messages.lastOrNull()?.content ?: "")
             }
             // === ConsistencyChecker ===
             joinedPrompt.contains("视觉一致性检查员") || joinedPrompt.contains("检查项：") -> plan.consistencyResponse()
@@ -85,7 +86,7 @@ class DeterministicMockLLMProvider(
             else -> plan.fallbackResponse()
         }
 
-        return Result.success(TextGenerationResult(content = response, model = "mock-dryrun-v1", rawResponse = response))
+        return Result.success(TextGenerationResult(content = response, model = "mock-dryrun-v1"))
     }
 }
 
@@ -248,13 +249,13 @@ data class AgentInput(
     val taskId: String,
     val projectId: String,
     val content: String,
-    val context: AgentContext = AgentContext(),
+    val context: ArcReelAgentContext = ArcReelAgentContext(),
     val constraints: List<String> = emptyList(),
     val targetQuality: Float = 0.7f,
     val maxIterations: Int = 3
 )
 
-data class AgentContext(
+data class ArcReelAgentContext(
     val projectId: String = "",
     val characterProfiles: Map<String, String> = emptyMap(),
     val sceneHistory: List<String> = emptyList(),
@@ -299,7 +300,7 @@ class SelfCritiqueEngine(
         content: String,
         agentName: String,
         iteration: Int,
-        context: AgentContext
+        context: ArcReelAgentContext
     ): CritiqueResult = withContext(Dispatchers.IO) {
         val prompt = buildString {
             append("你是一位严格的AI内容审查员。请审查以下$agentName的输出，评估其质量。\n\n")
@@ -324,8 +325,8 @@ class SelfCritiqueEngine(
         val result = LLMProviderHub.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位严格的AI内容质量审查员。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage("system", "你是一位严格的AI内容质量审查员。"),
+                    ChatMessage("user", prompt)
                 ),
                 temperature = 0.2f,
                 maxTokens = 2048
@@ -408,8 +409,8 @@ class CharacterAnalystAgent : ArcReelAgent {
             val result = LLMProviderHub.generateText(
                 TextGenerationRequest(
                     messages = listOf(
-                        mapOf("role" to "system", "content" to "你是一位专业的小说角色视觉分析师。"),
-                        mapOf("role" to "user", "content" to prompt)
+                        ChatMessage("system", "你是一位专业的小说角色视觉分析师。"),
+                        ChatMessage("user", prompt)
                     ),
                     temperature = 0.3f,
                     maxTokens = 4096
@@ -494,8 +495,8 @@ class ArcReelStoryboardPlannerAgent : ArcReelAgent {
             val result = LLMProviderHub.generateText(
                 TextGenerationRequest(
                     messages = listOf(
-                        mapOf("role" to "system", "content" to "你是一位专业的AI分镜师。"),
-                        mapOf("role" to "user", "content" to prompt)
+                        ChatMessage("system", "你是一位专业的AI分镜师。"),
+                        ChatMessage("user", prompt)
                     ),
                     temperature = 0.4f,
                     maxTokens = 4096
@@ -572,8 +573,8 @@ class ConsistencyCheckerAgent : ArcReelAgent {
         val result = LLMProviderHub.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位视觉一致性检查员。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage("system", "你是一位视觉一致性检查员。"),
+                    ChatMessage("user", prompt)
                 ),
                 temperature = 0.1f,
                 maxTokens = 2048
@@ -654,8 +655,8 @@ class QualityAssessorAgent : ArcReelAgent {
         val result = LLMProviderHub.generateText(
             TextGenerationRequest(
                 messages = listOf(
-                    mapOf("role" to "system", "content" to "你是一位AI内容质量评估专家。"),
-                    mapOf("role" to "user", "content" to prompt)
+                    ChatMessage("system", "你是一位AI内容质量评估专家。"),
+                    ChatMessage("user", prompt)
                 ),
                 temperature = 0.1f,
                 maxTokens = 2048
@@ -731,7 +732,7 @@ class AgentTeamCoordinator {
         characterProfiles: Map<String, String>,
         maxTeamIterations: Int = 2
     ): TeamCoordinationResult = withContext(Dispatchers.IO) {
-        val context = AgentContext(
+        val context = ArcReelAgentContext(
             projectId = projectId,
             characterProfiles = characterProfiles,
             sharedKnowledge = sharedMemory

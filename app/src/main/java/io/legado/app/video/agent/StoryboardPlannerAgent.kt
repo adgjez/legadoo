@@ -1,11 +1,9 @@
 package io.legado.app.video.agent
 
 import android.util.Log
-import io.legado.app.video.api.AgentContext
-import io.legado.app.video.api.AgentResult
 import io.legado.app.video.api.AgnesApiClient
-import io.legado.app.video.api.AgnesChatMessage
-import io.legado.app.video.api.AgnesChatRequest
+import io.legado.app.video.api.ChatMessage
+import io.legado.app.utils.fromJsonArray
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -99,22 +97,20 @@ class StoryboardPlannerAgent(private val apiClient: AgnesApiClient) {
             }
             
             val messages = listOf(
-                AgnesChatMessage("system", SYSTEM_PROMPT),
-                AgnesChatMessage("user", userPrompt)
+                ChatMessage("system", SYSTEM_PROMPT),
+                ChatMessage("user", userPrompt)
             )
             
-            val request = AgnesChatRequest(
-                model = "agnes-chat-v1",
+            val response = apiClient.generateChat(
                 messages = messages,
-                temperature = 0.5,
+                model = "agnes-chat-v1",
+                temperature = 0.5f,
                 maxTokens = 8192
             )
             
-            val response = apiClient.chatCompletion(request)
-            
             response.fold(
                 onSuccess = { resp ->
-                    val content = resp.choices?.firstOrNull()?.message?.content ?: ""
+                    val content = resp.content
                     val json = extractJsonArray(content)
                     val scenes = parseStoryboardScenes(json)
                     
@@ -166,7 +162,7 @@ class StoryboardPlannerAgent(private val apiClient: AgnesApiClient) {
     private fun parseStoryboardScenes(json: String): List<StoryboardScene> {
         return try {
             val gson = com.google.gson.Gson()
-            val list = gson.fromJsonArray(json, StoryboardScene::class.java)
+            val list = gson.fromJsonArray<StoryboardScene>(json).getOrDefault(emptyList())
             list.mapIndexed { index, scene ->
                 if (scene.order == 0) scene.copy(order = index + 1) else scene
             }

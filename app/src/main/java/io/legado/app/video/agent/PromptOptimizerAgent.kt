@@ -1,10 +1,8 @@
 package io.legado.app.video.agent
 
 import android.util.Log
-import io.legado.app.video.api.AgentResult
 import io.legado.app.video.api.AgnesApiClient
-import io.legado.app.video.api.AgnesChatMessage
-import io.legado.app.video.api.AgnesChatRequest
+import io.legado.app.video.api.ChatMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -64,21 +62,19 @@ class PromptOptimizerAgent(private val apiClient: AgnesApiClient) {
             }
             
             val messages = listOf(
-                AgnesChatMessage("system", SYSTEM_PROMPT),
-                AgnesChatMessage("user", userPrompt)
+                ChatMessage("system", SYSTEM_PROMPT),
+                ChatMessage("user", userPrompt)
             )
             
-            val request = AgnesChatRequest(
-                model = "agnes-chat-v1",
+            val response = apiClient.generateChat(
                 messages = messages,
-                temperature = 0.3,
+                model = "agnes-chat-v1",
+                temperature = 0.3f,
                 maxTokens = 2048
             )
-            
-            val response = apiClient.chatCompletion(request)
             response.fold(
                 onSuccess = { resp ->
-                    val content = resp.choices?.firstOrNull()?.message?.content ?: originalPrompt
+                    val content = resp.content.ifBlank { originalPrompt }
                     AgentResult(
                         success = true,
                         output = content.trim(),
@@ -117,21 +113,19 @@ class PromptOptimizerAgent(private val apiClient: AgnesApiClient) {
             }
             
             val messages = listOf(
-                AgnesChatMessage("system", SYSTEM_PROMPT),
-                AgnesChatMessage("user", userPrompt)
+                ChatMessage("system", SYSTEM_PROMPT),
+                ChatMessage("user", userPrompt)
             )
             
-            val request = AgnesChatRequest(
-                model = "agnes-chat-v1",
+            val response = apiClient.generateChat(
                 messages = messages,
-                temperature = 0.3,
+                model = "agnes-chat-v1",
+                temperature = 0.3f,
                 maxTokens = 2048
             )
-            
-            val response = apiClient.chatCompletion(request)
             response.fold(
                 onSuccess = { resp ->
-                    val content = resp.choices?.firstOrNull()?.message?.content ?: scene.videoPrompt
+                    val content = resp.content.ifBlank { scene.videoPrompt }
                     AgentResult(success = true, output = content.trim())
                 },
                 onFailure = {

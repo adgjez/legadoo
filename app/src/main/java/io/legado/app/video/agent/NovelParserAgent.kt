@@ -1,11 +1,8 @@
 package io.legado.app.video.agent
 
 import android.util.Log
-import io.legado.app.video.api.AgentContext
-import io.legado.app.video.api.AgentResult
 import io.legado.app.video.api.AgnesApiClient
-import io.legado.app.video.api.AgnesChatMessage
-import io.legado.app.video.api.AgnesChatRequest
+import io.legado.app.video.api.ChatMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -164,20 +161,18 @@ class NovelParserAgent(private val apiClient: AgnesApiClient) {
         }
         
         val messages = listOf(
-            AgnesChatMessage("system", SYSTEM_PROMPT),
-            AgnesChatMessage("user", userPrompt)
+            ChatMessage("system", SYSTEM_PROMPT),
+            ChatMessage("user", userPrompt)
         )
         
-        val request = AgnesChatRequest(
-            model = "agnes-chat-v1",
+        val response = apiClient.generateChat(
             messages = messages,
-            temperature = 0.3,
+            model = "agnes-chat-v1",
+            temperature = 0.3f,
             maxTokens = 4096
         )
-        
-        val response = apiClient.chatCompletion(request)
         return response.map { resp ->
-            val content = resp.choices?.firstOrNull()?.message?.content ?: ""
+            val content = resp.content
             val json = extractJson(content)
             parseAnalysisResult(json)
         }
