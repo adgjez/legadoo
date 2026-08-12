@@ -1,24 +1,19 @@
 package io.legado.app.video.service
 
 import android.content.Context
+import io.legado.app.data.appDb
 import io.legado.app.video.agent.AgentTeamCoordinator
-import io.legado.app.video.agent.CharacterAnalystAgent
-import io.legado.app.video.agent.StoryboardPlannerAgent
 import io.legado.app.video.api.BackendRouter
 import io.legado.app.video.api.ImageGenerationRequest
-import io.legado.app.video.api.ProviderCapability
 import io.legado.app.video.api.VideoGenerationRequest
-import io.legado.app.video.config.ProjectDefaults
 import io.legado.app.video.config.ProjectType
 import io.legado.app.video.config.SmartDefaults
-import io.legado.app.video.data.dao.appDb
 import io.legado.app.video.data.entities.VideoCharacter
 import io.legado.app.video.data.entities.VideoProject
 import io.legado.app.video.data.entities.VideoScene
 import io.legado.app.video.pipeline.ProductionPipeline
 import io.legado.app.video.pipeline.PromptEvolutionEngine
 import io.legado.app.video.pipeline.StageManager
-import io.legado.app.video.pipeline.TemplateApplyResult
 import io.legado.app.video.pipeline.TemplateEngine
 import io.legado.app.video.quality.FrameData
 import io.legado.app.video.quality.QualityReport
@@ -29,7 +24,6 @@ import io.legado.app.video.states.CostRecord
 import io.legado.app.video.states.CostStore
 import io.legado.app.video.states.ProjectsStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
@@ -53,15 +47,15 @@ class VideoPipelineOrchestrator(
     private val promptEngine = PromptEvolutionEngine()
     private val qualityScorer = QualityScorer()
 
-    private val projectDao by lazy { appDb.videoProjectDao() }
-    private val sceneDao by lazy { appDb.videoSceneDao() }
-    private val characterDao by lazy { appDb.videoCharacterDao() }
+    private val projectDao by lazy { appDb.videoProjectDao }
+    private val sceneDao by lazy { appDb.videoSceneDao }
+    private val characterDao by lazy { appDb.videoCharacterDao }
 
     suspend fun runFullPipeline(projectId: String): PipelineRunResult = withContext(Dispatchers.IO) {
         val project = projectDao.getById(projectId)
             ?: return@withContext PipelineRunResult(success = false, error = "项目不存在")
 
-        val defaults = SmartDefaults.getDefaults(ProjectType.NOVEL_ADAPTATION)
+        val defaults = SmartDefaults.recommendDefaults(ProjectType.NOVEL_ADAPTATION)
         val stageManager = StageManager(projectId, projectEventService, appStore, projectsStore)
 
         try {
@@ -331,7 +325,8 @@ class VideoPipelineOrchestrator(
         return scenes
     }
 
-    suspend fun getPipelineState(projectId: String) = projectEventService.subscribe(projectId)
+    fun getPipelineState(projectId: String, callback: (io.legado.app.video.realtime.ProjectEvent) -> Unit): String =
+        projectEventService.subscribe(projectId, callback)
 
     suspend fun pauseProject(projectId: String) {
         projectEventService.publish(
@@ -362,11 +357,11 @@ class VideoPipelineOrchestrator(
         sourceContent: String = ""
     ): Result<VideoProject> = withContext(Dispatchers.IO) {
         try {
-            val template = templateEngine.getTemplateById(templateId)
+            val template = TemplateEngine.getTemplateById(templateId)
                 ?: return@withContext Result.failure(IllegalArgumentException("模板不存在: $templateId"))
 
-            val applied = templateEngine.applyTemplate(template, projectName)
             val projectId = UUID.randomUUID().toString()
+            val applied = templateEngine.applyTemplate(template, projectId, projectName)
 
             val project = VideoProject(
                 id = projectId,

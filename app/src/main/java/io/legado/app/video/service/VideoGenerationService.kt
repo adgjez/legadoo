@@ -90,11 +90,11 @@ class VideoGenerationService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification("视频生成服务启动"))
         
         val db = getDatabase()
-        projectDao = db.videoProjectDao()
-        characterDao = db.videoCharacterDao()
-        sceneDao = db.videoSceneDao()
-        taskDao = db.videoTaskDao()
-        traceDao = db.videoAgentTraceDao()
+        projectDao = db.videoProjectDao
+        characterDao = db.videoCharacterDao
+        sceneDao = db.videoSceneDao
+        taskDao = db.videoTaskDao
+        traceDao = db.videoAgentTraceDao
         apiClient = AgnesApiClient()
     }
     
@@ -238,11 +238,13 @@ class VideoGenerationService : Service() {
             updateProjectStatus(projectId, VideoProject.STATUS_GENERATING, 55)
             
             val promptAgent = PromptOptimizerAgent(apiClient)
-            awaitAll(scenes.map { scene ->
-                async(serviceScope.coroutineContext) {
-                    generateSceneStoryboard(projectId, scene, characters, promptAgent)
-                }
-            })
+            coroutineScope {
+                awaitAll(scenes.map { scene ->
+                    async {
+                        generateSceneStoryboard(projectId, scene, characters, promptAgent)
+                    }
+                })
+            }
             
             val completedStoryboards = scenes.count { 
                 sceneDao.getById(it.id)?.generatedStoryboardPath?.isNotEmpty() == true 
@@ -254,11 +256,13 @@ class VideoGenerationService : Service() {
             updateNotification("生成视频...")
             _serviceState.value = ServiceState(isRunning = true, projectId = projectId, currentStep = "生成视频", progress = 70)
             
-            awaitAll(scenes.map { scene ->
-                async(serviceScope.coroutineContext) {
-                    generateSceneVideo(projectId, scene)
-                }
-            })
+            coroutineScope {
+                awaitAll(scenes.map { scene ->
+                    async {
+                        generateSceneVideo(projectId, scene)
+                    }
+                })
+            }
             
             val completedVideos = scenes.count {
                 sceneDao.getById(it.id)?.generatedVideoPath?.isNotEmpty() == true
@@ -296,16 +300,15 @@ class VideoGenerationService : Service() {
         
         try {
             // Expand idea into a full script using AI
-            val request = AgnesChatRequest(
+            val chatResult = apiClient.generateChat(
                 messages = listOf(
-                    AgnesChatMessage("system", "你是一个创意编剧。请将用户的创意扩展成一个完整的短视频剧本，包含角色、场景、对白和动作描述。用markdown格式输出。"),
-                    AgnesChatMessage("user", idea)
+                    ChatMessage("system", "你是一个创意编剧。请将用户的创意扩展成一个完整的短视频剧本，包含角色、场景、对白和动作描述。用markdown格式输出。"),
+                    ChatMessage("user", idea)
                 ),
-                temperature = 0.8,
+                temperature = 0.8f,
                 maxTokens = 4096
             )
-            val response = apiClient.chatCompletion(request)
-            val expandedScript = response.getOrNull()?.choices?.firstOrNull()?.message?.content ?: idea
+            val expandedScript = chatResult.getOrNull()?.content ?: idea
             
             // Process as script
             processNovelToVideo(projectId, expandedScript)
@@ -341,7 +344,7 @@ class VideoGenerationService : Service() {
                 n = 1
             )
             
-            val result = apiClient.generateImage(request)
+            val result = apiClient.generateImageLegacy(request)
             
             result.onSuccess { response ->
                 val imageUrl = response.data?.firstOrNull()?.url
@@ -386,10 +389,10 @@ class VideoGenerationService : Service() {
                 // For now, we pass the storyboard as context
             }
             
-            val result = apiClient.generateVideo(request)
+            val result = apiClient.generateVideoLegacy(request)
             
             result.onSuccess { response ->
-                val videoId = response.videoId ?: response.id
+                val videoId = response.videoId ?: response.taskId
                 if (!videoId.isNullOrBlank()) {
                     taskDao.insert(VideoTask(
                         id = generateId(),
@@ -409,7 +412,7 @@ class VideoGenerationService : Service() {
                         sceneDao.updateVideo(scene.id, localFile.absolutePath)
                         taskDao.updateStatus(
                             taskDao.getByProviderTaskId(videoId)?.id ?: "",
-                            VideoTask.STATUS_COMPLETED
+                            VideoTask.STATUS_COMPLETED, 100
                         )
                     }.onFailure { error ->
                         sceneDao.updateStatus(scene.id, VideoScene.STATUS_FAILED, error.message ?: "")
@@ -425,7 +428,7 @@ class VideoGenerationService : Service() {
     
     private suspend fun exportFinalVideo(projectId: String, scenes: List<VideoScene>) {
         val completedVideos = scenes.mapNotNull { scene ->
-            val path = sceneDao.getById(it.id)?.generatedVideoPath
+            val path = sceneDao.getById(scene.id)?.generatedVideoPath
             if (!path.isNullOrBlank() && File(path).exists()) path else null
         }
         

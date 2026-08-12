@@ -4,7 +4,7 @@ import android.content.Context
 import io.legado.app.video.api.BackendRouter
 import io.legado.app.video.api.ImageGenerationRequest
 import io.legado.app.video.api.VideoGenerationRequest
-import io.legado.app.video.data.dao.appDb
+import io.legado.app.data.appDb
 import io.legado.app.video.data.entities.VideoScene
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 class ErrorRecoveryManager(
     private val context: Context
 ) {
-    private val sceneDao by lazy { appDb.videoSceneDao() }
+    private val sceneDao by lazy { appDb.videoSceneDao }
 
     data class RecoveryResult(
         val success: Boolean,
@@ -123,23 +123,23 @@ class ErrorRecoveryManager(
                 strategy = RecoveryStrategy.RETRY
             )
         } catch (e: Exception) {
-            classifyError(e)
-        }
-
-        if (!classification.isRecoverable) {
-            sceneDao.update(
-                scene.copy(
-                    videoStatus = VideoScene.STATUS_FAILED,
-                    errorMessage = "不可恢复错误: ${classification.category}"
+            val result = classifyError(e)
+            if (!result.isRecoverable) {
+                sceneDao.update(
+                    scene.copy(
+                        videoStatus = VideoScene.STATUS_FAILED,
+                        errorMessage = "不可恢复错误: ${result.category}"
+                    )
                 )
-            )
-            return@withContext RecoveryResult(
-                success = false,
-                recovered = false,
-                attempts = 1,
-                strategy = classification.suggestedStrategy,
-                errorMessage = e.message
-            )
+                return@withContext RecoveryResult(
+                    success = false,
+                    recovered = false,
+                    attempts = 1,
+                    strategy = result.suggestedStrategy,
+                    errorMessage = e.message
+                )
+            }
+            result
         }
 
         var lastError: Exception? = null
@@ -255,8 +255,11 @@ class ErrorRecoveryManager(
         }
 
         val categories = failedScenes.mapNotNull { scene ->
-            scene.errorMessage?.let { msg ->
+            val msg = scene.errorMessage
+            if (msg.isNotBlank()) {
                 classifyError(Exception(msg)).category
+            } else {
+                null
             }
         }.groupingBy { it }.eachCount()
 

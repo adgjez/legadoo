@@ -22,9 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.legado.app.video.pipeline.EvolutionResult
-import io.legado.app.video.pipeline.EvolutionTechnique
-import io.legado.app.video.pipeline.PromptChange
+import io.legado.app.video.pipeline.PromptEvolutionEngine.ChangeType
+import io.legado.app.video.pipeline.PromptEvolutionEngine.EvolutionResult
+import io.legado.app.video.pipeline.PromptEvolutionEngine.EvolutionTechnique
+import io.legado.app.video.pipeline.PromptEvolutionEngine.PromptChange
 import io.legado.app.video.pipeline.PromptTemplates
 import io.legado.app.video.ui.theme.VideoColors
 
@@ -210,52 +211,20 @@ fun PromptEvolutionScreen(
                         val icon = techniqueIcon(technique)
                         val color = techniqueColor(technique)
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedTechniques = if (isSelected) {
-                                        selectedTechniques - technique
-                                    } else {
-                                        selectedTechniques + technique
-                                    }
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) {
-                                    color.copy(alpha = 0.15f)
+                        TechniqueCard(
+                            technique = technique,
+                            isSelected = isSelected,
+                            description = description,
+                            icon = icon,
+                            color = color,
+                            onToggle = {
+                                selectedTechniques = if (isSelected) {
+                                    selectedTechniques - technique
                                 } else {
-                                    VideoColors.Surface
-                                }
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = { _ ->
-                                        selectedTechniques = if (isSelected) {
-                                            selectedTechniques - technique
-                                        } else {
-                                            selectedTechniques + technique
-                                        }
-                                    },
-                                    colors = CheckboxDefaults.colors(checkedColor = color)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(technique.name.replace("_", " "), fontWeight = FontWeight.Medium)
-                                    Text(
-                                        description,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = VideoColors.TextSecondary
-                                    )
+                                    selectedTechniques + technique
                                 }
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -414,6 +383,51 @@ fun PromptEvolutionScreen(
 }
 
 @Composable
+private fun TechniqueCard(
+    technique: EvolutionTechnique,
+    isSelected: Boolean,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    onToggle: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle() },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                color.copy(alpha = 0.15f)
+            } else {
+                VideoColors.Surface
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { _ -> onToggle() },
+                colors = CheckboxDefaults.colors(checkedColor = color)
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(technique.name.replace("_", " "), fontWeight = FontWeight.Medium)
+                Text(
+                    description,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VideoColors.TextSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ChangeHistoryItem(change: PromptChange) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -516,7 +530,7 @@ private fun diffChanges(original: String, evolved: String): List<PromptChange> {
         changes.add(
             PromptChange(
                 iteration = 0,
-                type = io.legado.app.video.pipeline.ChangeType.ADD_VISUAL_DETAIL,
+                type = ChangeType.ADD_VISUAL_DETAIL,
                 original = original.take(100),
                 suggestion = newWords.take(4).joinToString(", "),
                 reason = "自动进化: 添加视觉增强描述"
@@ -553,28 +567,28 @@ private fun techniqueColor(technique: EvolutionTechnique) = when (technique) {
     EvolutionTechnique.CINEMATIC_ENHANCEMENT -> Color(0xFFFFD93D)
 }
 
-private fun changeTypeIcon(type: io.legado.app.video.pipeline.ChangeType) = when (type) {
-    io.legado.app.video.pipeline.ChangeType.ADD_VISUAL_DETAIL -> Icons.Default.Visibility
-    io.legado.app.video.pipeline.ChangeType.ADD_LIGHTING -> Icons.Default.Lightbulb
-    io.legado.app.video.pipeline.ChangeType.ADD_COMPOSITION -> Icons.Default.Crop
-    io.legado.app.video.pipeline.ChangeType.ADD_STYLE_REFERENCE -> Icons.Default.Style
-    io.legado.app.video.pipeline.ChangeType.ADD_EMOTION -> Icons.Default.Favorite
-    io.legado.app.video.pipeline.ChangeType.FIX_AMBIGUITY -> Icons.Default.Search
-    io.legado.app.video.pipeline.ChangeType.REMOVE_REDUNDANCY -> Icons.Default.Delete
-    io.legado.app.video.pipeline.ChangeType.ENHANCE_SUBJECT -> Icons.Default.Focus
-    io.legado.app.video.pipeline.ChangeType.ADD_COLOR_PALETTE -> Icons.Default.Palette
-    io.legado.app.video.pipeline.ChangeType.ADD_CAMERA_ANGLE -> Icons.Default.VideoCamera
+private fun changeTypeIcon(type: ChangeType) = when (type) {
+    ChangeType.ADD_VISUAL_DETAIL -> Icons.Default.Visibility
+    ChangeType.ADD_LIGHTING -> Icons.Default.Lightbulb
+    ChangeType.ADD_COMPOSITION -> Icons.Default.Crop
+    ChangeType.ADD_STYLE_REFERENCE -> Icons.Default.Style
+    ChangeType.ADD_EMOTION -> Icons.Default.Favorite
+    ChangeType.FIX_AMBIGUITY -> Icons.Default.Search
+    ChangeType.REMOVE_REDUNDANCY -> Icons.Default.Delete
+    ChangeType.ENHANCE_SUBJECT -> Icons.Default.Focus
+    ChangeType.ADD_COLOR_PALETTE -> Icons.Default.Palette
+    ChangeType.ADD_CAMERA_ANGLE -> Icons.Default.VideoCamera
 }
 
-private fun changeTypeLabel(type: io.legado.app.video.pipeline.ChangeType) = when (type) {
-    io.legado.app.video.pipeline.ChangeType.ADD_VISUAL_DETAIL -> "添加视觉细节"
-    io.legado.app.video.pipeline.ChangeType.ADD_LIGHTING -> "添加光影"
-    io.legado.app.video.pipeline.ChangeType.ADD_COMPOSITION -> "优化构图"
-    io.legado.app.video.pipeline.ChangeType.ADD_STYLE_REFERENCE -> "风格迁移"
-    io.legado.app.video.pipeline.ChangeType.ADD_EMOTION -> "情感放大"
-    io.legado.app.video.pipeline.ChangeType.FIX_AMBIGUITY -> "消除歧义"
-    io.legado.app.video.pipeline.ChangeType.REMOVE_REDUNDANCY -> "精简冗余"
-    io.legado.app.video.pipeline.ChangeType.ENHANCE_SUBJECT -> "强化主体"
-    io.legado.app.video.pipeline.ChangeType.ADD_COLOR_PALETTE -> "添加色调"
-    io.legado.app.video.pipeline.ChangeType.ADD_CAMERA_ANGLE -> "添加镜头角度"
+private fun changeTypeLabel(type: ChangeType) = when (type) {
+    ChangeType.ADD_VISUAL_DETAIL -> "添加视觉细节"
+    ChangeType.ADD_LIGHTING -> "添加光影"
+    ChangeType.ADD_COMPOSITION -> "优化构图"
+    ChangeType.ADD_STYLE_REFERENCE -> "风格迁移"
+    ChangeType.ADD_EMOTION -> "情感放大"
+    ChangeType.FIX_AMBIGUITY -> "消除歧义"
+    ChangeType.REMOVE_REDUNDANCY -> "精简冗余"
+    ChangeType.ENHANCE_SUBJECT -> "强化主体"
+    ChangeType.ADD_COLOR_PALETTE -> "添加色调"
+    ChangeType.ADD_CAMERA_ANGLE -> "添加镜头角度"
 }

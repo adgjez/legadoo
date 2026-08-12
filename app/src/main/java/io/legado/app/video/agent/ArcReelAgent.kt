@@ -454,7 +454,7 @@ class CharacterAnalystAgent : ArcReelAgent {
 
 // ========== 分镜规划智能体 ==========
 
-class StoryboardPlannerAgent : ArcReelAgent {
+class ArcReelStoryboardPlannerAgent : ArcReelAgent {
     override val agentName = "StoryboardPlanner"
     override val role = AgentRole.STORYBOARD_PLANNER
     override val capabilities = setOf(
@@ -717,7 +717,7 @@ class AgentTeamCoordinator {
 
     private val agents = mapOf(
         AgentRole.CHARACTER_ANALYST to CharacterAnalystAgent(),
-        AgentRole.STORYBOARD_PLANNER to StoryboardPlannerAgent(),
+        AgentRole.STORYBOARD_PLANNER to ArcReelStoryboardPlannerAgent(),
         AgentRole.CONSISTENCY_CHECKER to ConsistencyCheckerAgent(),
         AgentRole.QUALITY_ASSESSOR to QualityAssessorAgent()
     )

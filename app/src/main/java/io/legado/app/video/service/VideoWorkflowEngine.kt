@@ -2,6 +2,7 @@ package io.legado.app.video.service
 
 import android.content.Context
 import android.util.Log
+import io.legado.app.data.appDb
 import io.legado.app.video.api.*
 import io.legado.app.video.agent.*
 import io.legado.app.video.data.dao.*
@@ -15,11 +16,11 @@ import java.util.UUID
 class VideoWorkflowEngine(private val context: Context) {
     
     private val apiClient by lazy { ApiProviderFactory.getClientOrDefault() as AgnesApiClient }
-    private val projectDao by lazy { appDb.videoProjectDao() }
-    private val characterDao by lazy { appDb.videoCharacterDao() }
-    private val sceneDao by lazy { appDb.videoSceneDao() }
-    private val taskDao by lazy { appDb.videoTaskDao() }
-    private val traceDao by lazy { appDb.videoAgentTraceDao() }
+    private val projectDao by lazy { appDb.videoProjectDao }
+    private val characterDao by lazy { appDb.videoCharacterDao }
+    private val sceneDao by lazy { appDb.videoSceneDao }
+    private val taskDao by lazy { appDb.videoTaskDao }
+    private val traceDao by lazy { appDb.videoAgentTraceDao }
     
     private val _workflowState = MutableStateFlow(WorkflowState())
     val workflowState: StateFlow<WorkflowState> = _workflowState

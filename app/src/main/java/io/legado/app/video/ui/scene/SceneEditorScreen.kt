@@ -261,6 +261,7 @@ private fun SectionTitle(title: String) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun outlinedColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = VideoColors.Primary,
@@ -270,6 +271,7 @@ private fun outlinedColors() = OutlinedTextFieldDefaults.colors(
     unfocusedContainerColor = VideoColors.Surface
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DropDownSelector(
     label: String,
