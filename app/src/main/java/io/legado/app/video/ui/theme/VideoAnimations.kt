@@ -2,6 +2,7 @@ package io.legado.app.video.ui.theme
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -130,7 +131,7 @@ fun WaveAnimation(
         Modifier.background(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    color.copy(alpha = 0.1f + 0.1f * kotlin.math.sin(waveOffset * Math.PI.toFloat())),
+                    color.copy(alpha = (0.1f + 0.1f * kotlin.math.sin(waveOffset * Math.PI.toFloat())).toFloat()),
                     color.copy(alpha = 0.3f)
                 )
             )

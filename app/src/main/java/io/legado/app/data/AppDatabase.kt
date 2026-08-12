@@ -9,6 +9,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import io.legado.app.video.data.VideoConverters
 import io.legado.app.data.dao.AiAgentDao
 import io.legado.app.data.dao.AiMemoryDao
@@ -345,7 +346,7 @@ abstract class AppDatabase : RoomDatabase() {
                             }
                             db.insert(
                                 "keyboardAssists",
-                                SQLiteDatabase.CONFLICT_REPLACE,
+                                androidx.sqlite.db.SupportSQLiteDatabase.CONFLICT_REPLACE,
                                 contentValues
                             )
                         }

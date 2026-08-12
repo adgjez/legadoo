@@ -303,7 +303,7 @@ class SelfCritiqueEngine(
         context: ArcReelAgentContext
     ): CritiqueResult = withContext(Dispatchers.IO) {
         val prompt = buildString {
-            append("你是一位严格的AI内容审查员。请审查以下$agentName的输出，评估其质量。\n\n")
+            append("你是一位严格的AI内容审查员。请审查以下${agentName}的输出，评估其质量。\n\n")
             append("输出内容：\n$content\n\n")
             append("审查标准：\n")
             append("1. 角色一致性 - 角色描述是否与已有资料一致\n")

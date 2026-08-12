@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -252,7 +253,7 @@ private fun DimensionBar(score: DimensionScore) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(score.score)
-                    .height(100f)
+                    .height(8.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(
                         when {
@@ -283,12 +284,3 @@ private fun qualityDescription(grade: QualityGrade): String = when (grade) {
     QualityGrade.BELOW_AVERAGE -> "质量待改进，建议检查问题并重新生成"
     QualityGrade.POOR -> "质量不合格，强烈建议重新生成"
 }
-
-private val QualityTargetType.displayName: String
-    get() = when (this) {
-        QualityTargetType.STORYBOARD_FRAME -> "分镜帧"
-        QualityTargetType.CHARACTER_DESIGN -> "角色设计"
-        QualityTargetType.SCRIPT_SEGMENT -> "剧本片段"
-        QualityTargetType.VIDEO_CLIP -> "视频片段"
-        QualityTargetType.FULL_EPISODE -> "完整剧集"
-    }

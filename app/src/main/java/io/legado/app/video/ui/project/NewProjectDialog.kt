@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import io.legado.app.video.data.entities.VideoProject
 import io.legado.app.video.ui.theme.VideoColors
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewProjectDialog(
     onDismiss: () -> Unit,
@@ -177,6 +178,7 @@ fun NewProjectDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SourceOption(
     label: String,

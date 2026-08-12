@@ -12,11 +12,12 @@ import io.legado.app.video.api.GenerationModeRouter
 import io.legado.app.video.api.ImageGenerationRequest
 import io.legado.app.video.api.ModeCapabilityCatalog
 import io.legado.app.video.api.VideoGenerationRequest
-import io.legado.app.video.data.dao.appDb
+import io.legado.app.data.appDb
 import io.legado.app.video.data.entities.*
 import io.legado.app.video.pipeline.PipelineStage
 import io.legado.app.video.pipeline.StageProgress
 import io.legado.app.video.pipeline.StageStatus
+import io.legado.app.video.pipeline.TemplateApplyResult
 import io.legado.app.video.quality.QualityReport
 import io.legado.app.video.service.VideoPipelineOrchestrator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -88,30 +89,28 @@ class VideoProjectViewModel(application: Application) : AndroidViewModel(applica
         val hasDialogue = scenes.any { it.dialogue.isNotBlank() }
         val qualityPreset = when {
             project.style.contains("电影", true) || project.style.contains("cinematic", true)
-            -> io.legado.app.video.api.QualityPreset.CINEMATIC
+            -> io.legado.app.video.config.QualityPreset.CINEMATIC
             project.style.contains("漫画", true) || project.style.contains("动漫", true)
-            -> io.legado.app.video.api.QualityPreset.ANIME
+            -> io.legado.app.video.config.QualityPreset.ANIME
             project.style.contains("商业", true)
-            -> io.legado.app.video.api.QualityPreset.COMMERCIAL
-            else -> io.legado.app.video.api.QualityPreset.STANDARD
+            -> io.legado.app.video.config.QualityPreset.COMMERCIAL
+            else -> io.legado.app.video.config.QualityPreset.STANDARD
         }
         val base = GenerationConfig.recommendFor(
+            totalSegments = scenes.size.coerceAtLeast(1),
             distinctCharacters = chars.size.coerceAtLeast(1),
             hasDialogue = hasDialogue,
-            qualityPreset = qualityPreset,
-            totalSegments = scenes.size.coerceAtLeast(1),
             budgetTier = BudgetTier.BALANCED
         )
         // 用户手动覆盖 → 不改 heuristics 其他字段，只把 mode 替换掉
         val effective = _manualModeOverride.value?.let { base.copy(mode = it) } ?: base
         val router = GenerationModeRouter()
-        val dryRun = router.dryRun(effective, scenes.size.coerceAtLeast(1)).getOrNull()
         val warnings = ModeCapabilityCatalog.validate(effective, scenes.size.coerceAtLeast(1))
         val autoOrManual = if (_manualModeOverride.value == null) "AUTO" else "MANUAL"
         return GenerationRecommendation(
             mode = effective.mode,
             config = effective,
-            dryRun = dryRun,
+            dryRun = null,
             warnings = warnings,
             source = autoOrManual,
             heuristicInputs = HeuristicInputs(
@@ -275,6 +274,31 @@ class VideoProjectViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    fun createProjectFromTemplate(result: TemplateApplyResult) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val project = VideoProject(
+                    id = UUID.randomUUID().toString(),
+                    name = result.projectName,
+                    sourceType = result.sourceType.name,
+                    genre = "",
+                    style = result.visualStyle.styleName,
+                    targetAspectRatio = result.aspectRatio,
+                    targetResolution = result.resolution,
+                    status = VideoProject.STATUS_DRAFT
+                )
+                appDb.videoProjectDao().insert(project)
+                _currentProject.value = project
+                loadProject(project.id)
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun deleteProject(project: VideoProject) {
         viewModelScope.launch {
             appDb.videoProjectDao().deleteById(project.id)
@@ -373,6 +397,12 @@ class VideoProjectViewModel(application: Application) : AndroidViewModel(applica
     fun saveScene(scene: VideoScene) {
         viewModelScope.launch {
             appDb.videoSceneDao().update(scene)
+        }
+    }
+
+    fun updateScenePrompt(scene: VideoScene, newPrompt: String) {
+        viewModelScope.launch {
+            appDb.videoSceneDao().update(scene.copy(visualPrompt = newPrompt))
         }
     }
 

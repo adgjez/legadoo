@@ -407,7 +407,7 @@ fun EmptyState(
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(VideoColors.SurfaceVariant, CircleShape()),
+                .background(VideoColors.SurfaceVariant, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(

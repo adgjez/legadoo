@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
@@ -88,7 +89,7 @@ class BookVideoActivity : ComponentActivity() {
                         // Could update UI with progress
                     }
                 }.onSuccess { project ->
-                    VideoWorkbenchActivity.start(this, project.id)
+                    VideoWorkbenchActivity.start(this@BookVideoActivity)
                     finish()
                 }.onFailure { error ->
                     // Show error
@@ -536,11 +537,20 @@ private fun BookInfoHeader(book: Book) {
                         modifier = Modifier.size(32.dp)
                     )
                 } else {
-                    AsyncImage(
-                        model = book.coverUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Cover image placeholder - Glide integration would go here
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(VideoColors.SurfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = null,
+                            tint = VideoColors.OnSurfaceVariant,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
 

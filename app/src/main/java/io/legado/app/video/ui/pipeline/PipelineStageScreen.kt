@@ -131,7 +131,7 @@ private fun OverallProgressCard(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        progress = overallProgress,
+                        progress = { overallProgress },
                         modifier = Modifier.size(100.dp),
                         strokeWidth = 8.dp,
                         color = when {
@@ -234,7 +234,7 @@ private fun StageTimelineItem(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        crossAxisAlignment = Alignment.Top
+        horizontalAlignment = Alignment.Top
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -280,7 +280,7 @@ private fun StageTimelineItem(
             if (progress.isActive()) {
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn() + expandVert()
+                    enter = fadeIn() + expandVertically()
                 ) {
                     Column {
                         Spacer(Modifier.height(4.dp))
@@ -357,7 +357,7 @@ private fun StageIndicator(status: StageStatus) {
                 val scale by infiniteTransition.animateFloat(
                     initialValue = 0.8f,
                     targetValue = 1.0f,
-                    animationSpec = infiniteRepeatableAnimation(
+                    animationSpec = infiniteRepeatable(
                         animation = tween(durationMillis = 600),
                         repeatMode = RepeatMode.Reverse
                     ),

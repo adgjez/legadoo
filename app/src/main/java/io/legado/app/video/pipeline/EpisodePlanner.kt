@@ -10,7 +10,7 @@ package io.legado.app.video.pipeline
  * - 物理切分：按确认的断点实际切分
  */
 
-data class EpisodePlan(
+data class EpisodePlanRequest(
     val episodeCount: Int,
     val episodes: List<EpisodeBreakpoint>,
     val recommended: Boolean = true
@@ -43,7 +43,7 @@ class EpisodePlanner {
         novelText: String,
         targetEpisodes: Int,
         chapterMarkers: List<Int> = emptyList()
-    ): EpisodePlan {
+    ): EpisodePlanRequest {
         val textLength = novelText.length
         val baseChunkSize = textLength / targetEpisodes
 
@@ -72,7 +72,7 @@ class EpisodePlanner {
             )
         }
 
-        return EpisodePlan(
+        return EpisodePlanRequest(
             episodeCount = targetEpisodes,
             episodes = episodes,
             recommended = true
@@ -86,7 +86,7 @@ class EpisodePlanner {
         chapterTitles: List<String>,
         chapterContents: List<String>,
         targetEpisodes: Int
-    ): EpisodePlan {
+    ): EpisodePlanRequest {
         val totalChapters = chapterTitles.size
         val chaptersPerEpisode = (totalChapters + targetEpisodes - 1) / targetEpisodes
 
@@ -114,7 +114,7 @@ class EpisodePlanner {
             )
         }
 
-        return EpisodePlan(
+        return EpisodePlanRequest(
             episodeCount = episodes.size,
             episodes = episodes,
             recommended = true
@@ -193,9 +193,9 @@ class EpisodePlanner {
     }
 
     fun recalculateWithUserFeedback(
-        original: EpisodePlan,
+        original: EpisodePlanRequest,
         userAdjustments: Map<Int, EpisodeBreakpoint>
-    ): EpisodePlan {
+    ): EpisodePlanRequest {
         val updatedEpisodes = original.episodes.map { ep ->
             userAdjustments[ep.episodeIndex] ?: ep
         }

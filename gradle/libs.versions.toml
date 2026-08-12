@@ -86,6 +86,7 @@ viewpager2 = "1.0.0"
 
 activity-activity = { module = "androidx.activity:activity", version.ref = "activity" }
 activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version = "1.9.1" }
 #androidx-annotation-experimental = { group = "androidx.annotation", name = "annotation-experimental", version = "1.3.1" }
@@ -114,6 +115,8 @@ hutool-crypto = { module = "cn.hutool:hutool-crypto", version.ref = "hutool" }
 libarchive = { module = "me.zhanghai.android.libarchive:library", version.ref = "libarchive" }
 lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "lifecycle" }
 lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 
 lyricViewx = { module = "com.github.Moriafly:LyricViewX", version.ref = "lyricViewx" }
 
@@ -185,7 +188,10 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "composeMaterial3" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 miuix-android = { module = "top.yukonga.miuix.kmp:miuix-android", version.ref = "miuix" }
 lazycolumnscrollbar = { module = "com.github.nanihadesuka:LazyColumnScrollbar", version.ref = "lazyColumnScrollbar" }
 colorpicker = { module = "com.jaredrummler:colorpicker", version.ref = "colorpicker" }

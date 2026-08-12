@@ -60,7 +60,11 @@ fun StoryboardWorkbenchScreen(
                 },
                 actions = {
                     IconButton(onClick = onCharactersClick) {
-                        Badge(if (characters.isNotEmpty()) characters.size else null) {
+                        BadgedBox(badge = {
+                            if (characters.isNotEmpty()) {
+                                Badge { Text(characters.size.toString()) }
+                            }
+                        }) {
                             Icon(Icons.Default.People, contentDescription = "角色", tint = VideoColors.OnSurface)
                         }
                     }

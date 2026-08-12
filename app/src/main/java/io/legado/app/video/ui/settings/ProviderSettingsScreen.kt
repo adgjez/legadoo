@@ -21,22 +21,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.legado.app.video.api.*
+import io.legado.app.video.ui.components.VideoTextField
 import io.legado.app.video.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderSettingsScreen(
     onBack: () -> Unit
 ) {
-    val providers = remember { ProviderRegistry.getAllProviderInfos() }
+    val providers = remember { ProviderRegistry.getAll() }
     var activeProviderId by remember { mutableStateOf(VideoApiConfigManager.activeProviderId) }
-    var selectedProvider by remember { mutableStateOf<ProviderInfo?>(null) }
+    var selectedProvider by remember { mutableStateOf<ProviderDescriptor?>(null) }
     var isTesting by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<ConnectionTestResult?>(null) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -98,7 +102,7 @@ fun ProviderSettingsScreen(
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = "当前激活: ${ProviderRegistry.getProviderInfo(activeProviderId)?.name ?: "未知"}",
+                                        text = "当前激活: ${ProviderRegistry.get(activeProviderId)?.displayName ?: "未知"}",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = VideoColors.OnSurface,
                                         fontWeight = FontWeight.Bold
@@ -135,7 +139,7 @@ fun ProviderSettingsScreen(
                 items(providers.size) { index ->
                     val provider = providers[index]
                     var animated by remember { mutableStateOf(false) }
-                    LaunchedEffect(provider.id) {
+                    LaunchedEffect(provider.key) {
                         kotlinx.coroutines.delay((index * 80).toLong())
                         animated = true
                     }
@@ -150,12 +154,12 @@ fun ProviderSettingsScreen(
                     ) {
                         ProviderCard(
                             provider = provider,
-                            isActive = provider.id == activeProviderId,
-                            isConfigured = VideoApiConfigManager.isProviderConfigured(provider.id),
+                            isActive = provider.key == activeProviderId,
+                            isConfigured = VideoApiConfigManager.isProviderConfigured(provider.key),
                             onClick = { selectedProvider = provider },
                             onSetActive = {
-                                activeProviderId = provider.id
-                                VideoApiConfigManager.activeProviderId = provider.id
+                                activeProviderId = provider.key
+                                VideoApiConfigManager.activeProviderId = provider.key
                             }
                         )
                     }
@@ -215,7 +219,7 @@ fun ProviderSettingsScreen(
                 onTestConnection = { client ->
                     isTesting = true
                     testResult = null
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    scope.launch {
                         val result = client.testConnection()
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             testResult = result.getOrNull()
@@ -231,7 +235,7 @@ fun ProviderSettingsScreen(
 
 @Composable
 private fun ProviderCard(
-    provider: ProviderInfo,
+    provider: ProviderDescriptor,
     isActive: Boolean,
     isConfigured: Boolean,
     onClick: () -> Unit,
@@ -271,13 +275,12 @@ private fun ProviderCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            provider.capabilities.firstOrNull()?.let { cap ->
-                                when (cap) {
-                                    Capability.IMAGE -> Icons.Default.Image
-                                    Capability.VIDEO -> Icons.Default.VideoLibrary
-                                    Capability.CHAT -> Icons.Default.Chat
-                                }
-                            } ?: Icons.Default.Api,
+                            when {
+                                provider.capabilities.supportsImage -> Icons.Default.Image
+                                provider.capabilities.supportsVideo -> Icons.Default.VideoLibrary
+                                provider.capabilities.supportsText -> Icons.Default.Chat
+                                else -> Icons.Default.Api
+                            },
                             null,
                             tint = VideoColors.Primary,
                             modifier = Modifier.size(22.dp)
@@ -286,7 +289,7 @@ private fun ProviderCard(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = provider.name,
+                            text = provider.displayName,
                             style = MaterialTheme.typography.titleMedium,
                             color = VideoColors.OnSurface,
                             fontWeight = FontWeight.Bold
@@ -295,13 +298,25 @@ private fun ProviderCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            provider.capabilities.forEach { cap ->
+                            if (provider.capabilities.supportsImage) {
                                 Text(
-                                    text = when (cap) {
-                                        Capability.IMAGE -> "🖼 图像"
-                                        Capability.VIDEO -> "🎬 视频"
-                                        Capability.CHAT -> "💬 对话"
-                                    },
+                                    text = "🖼 图像",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = VideoColors.OnSurfaceVariant,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            if (provider.capabilities.supportsVideo) {
+                                Text(
+                                    text = "🎬 视频",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = VideoColors.OnSurfaceVariant,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            if (provider.capabilities.supportsText) {
+                                Text(
+                                    text = "💬 对话",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = VideoColors.OnSurfaceVariant,
                                     fontSize = 10.sp
@@ -393,12 +408,12 @@ private fun ProviderCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProviderConfigDialog(
-    provider: ProviderInfo,
+    provider: ProviderDescriptor,
     onDismiss: () -> Unit,
     onTestConnection: (VideoApiClient) -> Unit,
     isTesting: Boolean
 ) {
-    val config = VideoApiConfigManager.getProviderConfig(provider.id)
+    val config = VideoApiConfigManager.getProviderConfig(provider.key)
     var apiKey by remember { mutableStateOf(config.apiKey) }
     var baseUrl by remember { mutableStateOf(config.baseUrl) }
     var imageModel by remember { mutableStateOf(config.imageModel ?: "") }
@@ -444,7 +459,7 @@ private fun ProviderConfigDialog(
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = provider.name,
+                        text = provider.displayName,
                         style = MaterialTheme.typography.titleLarge,
                         color = VideoColors.OnSurface,
                         fontWeight = FontWeight.Bold
@@ -580,7 +595,7 @@ private fun ProviderConfigDialog(
             ) {
                 OutlinedButton(
                     onClick = {
-                        val client = ProviderRegistry.getProvider(provider.id)
+                        val client = ApiProviderFactory.getClient(provider.key)
                         if (client != null) {
                             onTestConnection(client)
                         }
@@ -607,8 +622,8 @@ private fun ProviderConfigDialog(
                     onClick = {
                         VideoApiConfigManager.saveProviderConfig(
                             VideoApiConfig(
-                                providerId = provider.id,
-                                providerName = provider.name,
+                                providerId = provider.key,
+                                providerName = provider.displayName,
                                 apiKey = apiKey,
                                 baseUrl = baseUrl,
                                 timeoutSeconds = timeout.toIntOrNull() ?: 300,

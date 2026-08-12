@@ -110,7 +110,8 @@ data class TTSResult(
     val durationMs: Long = 0,
     val wordTimestamps: List<WordTimestamp> = emptyList(),
     val providerKey: String = "",
-    val error: String? = null
+    val error: String? = null,
+    val audioFormat: String = ""
 )
 
 data class WordTimestamp(
@@ -156,6 +157,30 @@ interface TTSBackend {
             ).isSuccess
         }
     }
+}
+
+/** 顶层估算函数，供各 TTS Backend 在未生成真实音频时使用 */
+private fun estimateDuration(text: String, speed: Float): Long {
+    val chars = text.length
+    val avgMsPerChar = 150L / speed.coerceAtLeast(0.3f)
+    return (chars * avgMsPerChar).toLong()
+}
+
+private fun estimateWordTimestamps(text: String): List<WordTimestamp> {
+    val hasChinese = "\\p{IsHan}".toRegex().containsMatchIn(text.take(50))
+    val tokens: List<String> = if (hasChinese) {
+        text.map { it.toString() }.filter { it.isNotBlank() }
+    } else {
+        text.split("\\s+".toRegex()).filter { it.isNotBlank() }
+    }
+    val timestamps = mutableListOf<WordTimestamp>()
+    var currentMs = 0L
+    tokens.forEach { token ->
+        val duration = (token.length * 100L).coerceAtLeast(80L)
+        timestamps.add(WordTimestamp(token, currentMs, currentMs + duration))
+        currentMs += duration
+    }
+    return timestamps
 }
 
 data class TTSVoiceInfo(
@@ -660,29 +685,6 @@ class TTSPipeline(
 
     suspend fun generateBatch(requests: List<TTSRequest>): List<TTSResult> = withContext(Dispatchers.IO) {
         requests.map { generate(it) }
-    }
-
-    fun estimateDuration(text: String, speed: Float): Long {
-        val chars = text.length
-        val avgMsPerChar = 150L / speed.coerceAtLeast(0.3f)
-        return (chars * avgMsPerChar).toLong()
-    }
-
-    fun estimateWordTimestamps(text: String): List<WordTimestamp> {
-        val hasChinese = "\\p{IsHan}".toRegex().containsMatchIn(text.take(50))
-        val tokens: List<String> = if (hasChinese) {
-            text.map { it.toString() }.filter { it.isNotBlank() }
-        } else {
-            text.split("\\s+".toRegex()).filter { it.isNotBlank() }
-        }
-        val timestamps = mutableListOf<WordTimestamp>()
-        var currentMs = 0L
-        tokens.forEach { token ->
-            val duration = (token.length * 100L).coerceAtLeast(80L)
-            timestamps.add(WordTimestamp(token, currentMs, currentMs + duration))
-            currentMs += duration
-        }
-        return timestamps
     }
 
     private fun createAutoProfile(characterName: String): VoiceProfile {

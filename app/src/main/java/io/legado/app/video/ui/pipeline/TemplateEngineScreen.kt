@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.legado.app.video.pipeline.ProjectTemplate
@@ -104,13 +107,11 @@ fun TemplateEngineScreen(
                     )
                 }
                 items(categories) { category ->
-                    item {
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            label = { Text(category.displayName) }
-                        )
-                    }
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = { selectedCategory = category },
+                        label = { Text(category.displayName) }
+                    )
                 }
             }
 
@@ -281,7 +282,7 @@ private fun TemplatePreviewDialog(
 
                 if (template.tags.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    Text("标签:", fontWeight = FontWeight.Small)
+                    Text("标签:", fontWeight = FontWeight.Medium)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -340,7 +341,7 @@ private fun templateColor(template: ProjectTemplate): Color = when (template.cat
     TemplateCategory.ENTERTAINMENT -> Color(0xFFA18CD1)
 }
 
-private fun templateIcon(category: TemplateCategory) = when (category) {
+private fun templateIcon(category: TemplateCategory): androidx.compose.ui.graphics.vector.ImageVector = when (category) {
     TemplateCategory.NOVEL_ADAPTATION -> Icons.Default.MenuBook
     TemplateCategory.COMIC_ADAPTATION -> Icons.Default.Book
     TemplateCategory.ORIGINAL_STORY -> Icons.Default.AutoStories

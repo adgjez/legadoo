@@ -107,7 +107,9 @@ object CharacterStoryboardJsonParser {
     private data class JsonNum(val v: Number) : JsonVal()
     private data class JsonBool(val v: Boolean) : JsonVal()
     private object JsonNull : JsonVal()
-    private data class JsonMap(val entries: MutableMap<String, JsonVal?> = mutableMapOf()) : JsonVal()
+    private data class JsonMap(val entries: MutableMap<String, JsonVal?> = mutableMapOf()) : JsonVal() {
+        operator fun get(key: String): JsonVal? = entries[key]
+    }
     private data class JsonList(val values: MutableList<JsonVal?> = mutableListOf()) : JsonVal()
 
     private fun JsonVal?.asString(): String? = when (this) {
@@ -140,7 +142,9 @@ object CharacterStoryboardJsonParser {
         if (i >= len || s[i] != '[') {
             // 如果给的是单个对象（{...}），也尝试包一层
             return if (s.getOrNull(i) == '{') {
-                listOfNotNull(readObject(s) { len }.also { i = it }.second)
+                val (next, obj) = readObject(s) { len }
+                i = next
+                listOfNotNull(obj)
             } else null
         }
         i++

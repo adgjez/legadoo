@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.legado.app.video.data.entities.VideoProject
@@ -466,7 +467,7 @@ private fun projectStatusColor(status: String): Color = when (status) {
     else -> VideoColors.TextSecondary
 }
 
-private fun projectStatusIcon(status: String) = when (status) {
+private fun projectStatusIcon(status: String): androidx.compose.ui.graphics.vector.ImageVector = when (status) {
     VideoProject.STATUS_DRAFT -> Icons.Default.Draft
     VideoProject.STATUS_ANALYZING -> Icons.Default.Psychology
     VideoProject.STATUS_PLANNING -> Icons.Default.AccountTree
@@ -478,7 +479,7 @@ private fun projectStatusIcon(status: String) = when (status) {
     else -> Icons.Default.Help
 }
 
-private fun projectStatusLabel(status: String) = when (status) {
+private fun projectStatusLabel(status: String): String = when (status) {
     VideoProject.STATUS_DRAFT -> "草稿"
     VideoProject.STATUS_ANALYZING -> "分析中"
     VideoProject.STATUS_PLANNING -> "规划中"

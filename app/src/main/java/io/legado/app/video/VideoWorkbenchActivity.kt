@@ -74,7 +74,7 @@ private fun VideoWorkbenchContent(
     val qualityReport by viewModel.qualityReport.collectAsStateWithLifecycle()
     val generationRecommendation by viewModel.generationRecommendation.collectAsStateWithLifecycle()
 
-    var navigationStack by remember { mutableStateOf(listOf(Screen.ProjectList)) }
+    var navigationStack by remember { mutableStateOf<List<Screen>>(listOf(Screen.ProjectList)) }
     var showWizard by remember { mutableStateOf(false) }
     var editingScene by remember { mutableStateOf<VideoScene?>(null) }
     var showCharacterList by remember { mutableStateOf(false) }

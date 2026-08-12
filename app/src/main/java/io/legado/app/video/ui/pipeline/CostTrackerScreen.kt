@@ -3,6 +3,7 @@ package io.legado.app.video.ui.pipeline
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,8 +20,6 @@ import androidx.compose.ui.unit.sp
 import io.legado.app.video.states.CostRecord
 import io.legado.app.video.states.CostStore
 import io.legado.app.video.ui.theme.VideoColors
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * CostTrackerScreen - 成本追踪界面
@@ -55,12 +54,12 @@ fun CostTrackerScreen(
         CostFilter.AUDIO -> projectRecords.filter { it.operation.contains("tts", true) || it.operation.contains("audio", true) }
     }
 
-    val totalCost = summary.actualTotal.ifZero { summary.estimatedTotal }
-    val budgetRemaining = budget - totalCost
-    val budgetPercentage = if (budget > 0) (totalCost / budget).coerceIn(0.0, 1.0).toFloat() else 0f
+    val totalCost = if (summary.actualTotal > 0.0) summary.actualTotal else summary.estimatedTotal
+    val budgetRemaining = budget - totalCost.toFloat()
+    val budgetPercentage = if (budget > 0) (totalCost / budget.toDouble()).coerceIn(0.0, 1.0).toFloat() else 0f
     val isOverBudget = budgetRemaining < 0
 
-    val usageBreakdown = calculateUsageBreakdown(projectRecords)
+    val usageBreakdown = calculateUsageBreakdown(projectRecords, totalCost)
 
     Scaffold(
         topBar = {
@@ -321,7 +320,7 @@ private data class UsageData(
     val callCount: Int
 )
 
-private fun calculateUsageBreakdown(records: List<CostRecord>): Map<OperationType, UsageData> {
+private fun calculateUsageBreakdown(records: List<CostRecord>, totalCost: Double): Map<OperationType, UsageData> {
     val breakdown = mutableMapOf<OperationType, UsageData>()
     records.forEach { record ->
         val type = classifyOperation(record.operation)
@@ -340,8 +339,8 @@ private fun classifyOperation(operation: String): OperationType {
     return when {
         lower.contains("image") -> OperationType.IMAGE
         lower.contains("video") -> OperationType.VIDEO
-        lower.contains("text") || lower.contains("script") || lower.contains("analysis") -> OperationType.TEXT
-        lower.contains("tts") || lower.contains("audio") || lower.contains("voice") -> OperationType.AUDIO
+        lower.contains("script") || lower.contains("analysis") || lower.contains("text") -> OperationType.TEXT
+        lower.contains("tts") || lower.contains("voice") || lower.contains("audio") -> OperationType.AUDIO
         else -> OperationType.TEXT
     }
 }
@@ -404,21 +403,21 @@ private enum class OperationType {
     IMAGE, VIDEO, TEXT, AUDIO
 }
 
-private fun typeIcon(type: OperationType) = when (type) {
+private fun typeIcon(type: OperationType): androidx.compose.ui.graphics.vector.ImageVector = when (type) {
     OperationType.IMAGE -> Icons.Default.Image
     OperationType.VIDEO -> Icons.Default.VideoLibrary
     OperationType.TEXT -> Icons.Default.Description
     OperationType.AUDIO -> Icons.Default.RecordVoiceOver
 }
 
-private fun typeColor(type: OperationType) = when (type) {
+private fun typeColor(type: OperationType): Color = when (type) {
     OperationType.IMAGE -> Color(0xFF667EEA)
     OperationType.VIDEO -> Color(0xFFF093FB)
     OperationType.TEXT -> Color(0xFF4FACFE)
     OperationType.AUDIO -> Color(0xFF43E97B)
 }
 
-private fun typeDisplayName(type: OperationType) = when (type) {
+private fun typeDisplayName(type: OperationType): String = when (type) {
     OperationType.IMAGE -> "图像生成"
     OperationType.VIDEO -> "视频生成"
     OperationType.TEXT -> "文本生成"
